@@ -35,15 +35,19 @@ namespace UDPSocketProject
             hosts[personalID - 1] = newHost;
             data = new byte[1024];
             ip = new IPEndPoint(IPAddress.Parse(newHost), newPort);
-            Construct(ip);
+            BindSocket(ip);
 
         }
 
-        public void Construct(IPEndPoint endPoint)
+        /// <summary>
+        /// Binds the ip to the socket and sets the timeout values for Send and Receive
+        /// </summary>
+        /// <param name="endPoint"></param>
+        public void BindSocket(IPEndPoint endPoint)
         {
             serverSocket = new UdpClient(endPoint);
-            serverSocket.Client.ReceiveTimeout = 5000;
-            serverSocket.Client.SendTimeout = 5000;
+            serverSocket.Client.ReceiveTimeout = 3000;
+            serverSocket.Client.SendTimeout = 3000;
         }
 
 
@@ -62,7 +66,7 @@ namespace UDPSocketProject
                     Console.WriteLine("Waiting for Client...");
                     if(serverSocket.Client == null)
                     {
-                        Construct(ip);
+                        BindSocket(ip);
                     }
                     stopwatch.Restart();
                 }
@@ -96,7 +100,7 @@ namespace UDPSocketProject
                     }
                     catch (Exception e)
                     {
-                        if (stopwatch.ElapsedMilliseconds > 15000)
+                        if (stopwatch.ElapsedMilliseconds > 10000)
                         {
                             Console.WriteLine("Exiting Server {0} ...", personalID);
                             stopwatch.Stop();
