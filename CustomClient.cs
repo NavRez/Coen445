@@ -16,7 +16,6 @@ namespace UDPSocketProject
         public bool Registered { get; set; }
         public List<string> ClientSubjects { get; set; }
         public int ClientPort { get; set; }
-
         public UdpClient UdpClient { get; set; }
 
 
@@ -34,27 +33,27 @@ namespace UDPSocketProject
             Registered = _registered;
         }
 
-        public CustomClient(string _clientName, string _ip, int _port)
-        {
-            ClientName = _clientName;
-            ClientPort = _port;
-            ClientIP = _ip;
-            Registered = true;
-        }
-
-
-        //public CustomClient(string name, string host, int port)
+        //public CustomClient(string _clientName, string _ip, int _port)
         //{
-        //    clientName = name;
-        //    clientHost = host;
-        //    clientPort = port;
-        //    clientIp = clientHost + "." + clientHost.ToString();
-        //    IPEndPoint ip = new IPEndPoint(IPAddress.Parse(host), port);
-        //    udpClient = new UdpClient(ip);
-        //    udpClient.Client.ReceiveTimeout = 3000;
-        //    udpClient.Client.SendTimeout = 3000;
-
+        //    ClientName = _clientName;
+        //    ClientPort = _port;
+        //    ClientIP = _ip;
+        //    Registered = true;
         //}
+
+
+        public CustomClient(string name, string host, int port)
+        {
+            ClientName = name;
+            ClientHost = host;
+            ClientPort = port;
+            ClientIP = ClientHost + "." + ClientHost.ToString();
+            IPEndPoint ip = new IPEndPoint(IPAddress.Parse(host), port);
+            UdpClient = new UdpClient(ip);
+            UdpClient.Client.ReceiveTimeout = 3000;
+            UdpClient.Client.SendTimeout = 3000;
+
+        }
 
         //This can just be obj.clientSubjects.Clear()
         //public void resetSubjects(List<string> newSubs)
@@ -95,7 +94,7 @@ namespace UDPSocketProject
             }
         }
 
-        public void AddSubjects(List<string> subjects)
+        public void AddSubjectList(List<string> subjects)
         {
             foreach (var subject in subjects)
             {
