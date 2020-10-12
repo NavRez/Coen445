@@ -139,30 +139,59 @@ namespace UDPSocketProject
 
         }
 
-        private static bool TrackFunction(TimeSpan timeSpan, Action action)
+        public class ClientElements
         {
-            try
+            public ClientElements(string name, string host, int port)
             {
-                Task task = Task.Factory.StartNew(() => action());
-                task.Wait(timeSpan);
-                return task.IsCompleted;
+                clientName = name;
+                clientHost = host;
+                clientPort = port;
+                ipAdress = clientHost + "." + clientHost.ToString();
             }
-            catch (AggregateException ae)
+
+            public ClientElements(string name,string host,int port,List<string> subs)
             {
-                throw ae.InnerException;
+                clientName = name;
+                clientHost = host;
+                clientPort = port;
+                clientSubjects = subs;
+                ipAdress = clientHost + "." + clientHost.ToString();
             }
+
+            public void resetSubjects(List<string> newSubs) 
+            {
+                clientSubjects = newSubs; 
+            }
+
+            public void changeIP(string newHost, int newPort)
+            {
+                clientHost = newHost;
+                clientPort = newPort;
+                ipAdress = newHost + "." + newPort.ToString();
+            }
+
+            private string clientName;
+            private string clientHost;
+            private string ipAdress;
+            private int clientPort;
+            private List<string> clientSubjects;
+
         }
 
-        
+        //these attributes are unique to each server
         protected UdpClient serverSocket;//protected socket element
         protected IPEndPoint ip;//the ip of the server
         protected byte[] data;//the databus of the server
         protected static int initServer = 0;//a static element that is incremented the moment a server is initalized
         protected int personalID = 0;//
         protected Stopwatch stopwatch = new Stopwatch();
+        public string[] subjects = { "computer engineering", "Disney Marvel", "Pokemon", "Final Fantasy", "Zack Fair", "Mario", "Mexican Studies", "Emojis", "Protocols","US politics" };
 
+
+        //shared information between servers
         protected static int[] ports = new int[2];//retains the ports of the servers
         protected static string[] hosts = new string[2];//retains the hosts of the servers
         public static Semaphore semaphore = new Semaphore(1, 1);
+        public static List<ClientElements> clients = new List<ClientElements>();
     }
 }
