@@ -10,14 +10,14 @@ namespace UDPSocketProject
     class CustomClient : UdpClient, IDisposable
     {
         #region properties
-        public string clientName { get; set; }
-        public string clientHost { get; set; }
-        public string clientIP { get; set; }
-        public bool registered { get; set; }
-        public List<string> clientSubjects { get; set; }
-        public int clientPort { get; set; }
+        public string ClientName { get; set; }
+        public string ClientHost { get; set; }
+        public string ClientIP { get; set; }
+        public bool Registered { get; set; }
+        public List<string> ClientSubjects { get; set; }
+        public int ClientPort { get; set; }
 
-        public UdpClient udpClient { get; set; }
+        public UdpClient UdpClient { get; set; }
 
 
 
@@ -26,20 +26,20 @@ namespace UDPSocketProject
 
         public CustomClient(string _clientName, string _clientHost, string _ip, int _port, List<string> _subject, bool _registered) 
         {
-            clientName = _clientName;
-            clientHost = _clientHost;
-            clientIP = _ip;
-            clientPort = _port;
-            clientSubjects = _subject;
-            registered = _registered;
+            ClientName = _clientName;
+            ClientHost = _clientHost;
+            ClientIP = _ip;
+            ClientPort = _port;
+            ClientSubjects = _subject;
+            Registered = _registered;
         }
 
         public CustomClient(string _clientName, string _ip, int _port)
         {
-            clientName = _clientName;
-            clientPort = _port;
-            clientIP = _ip;
-            registered = true;
+            ClientName = _clientName;
+            ClientPort = _port;
+            ClientIP = _ip;
+            Registered = true;
         }
 
 
@@ -74,24 +74,24 @@ namespace UDPSocketProject
 
         public void RestartClient()
         {
-            udpClient = new UdpClient(new IPEndPoint(IPAddress.Parse(clientHost), clientPort));
-            udpClient.Client.ReceiveTimeout = 3000;
-            udpClient.Client.SendTimeout = 3000;
+            UdpClient = new UdpClient(new IPEndPoint(IPAddress.Parse(ClientHost), ClientPort));
+            UdpClient.Client.ReceiveTimeout = 3000;
+            UdpClient.Client.SendTimeout = 3000;
         }
 
         public void ChangeIP(string newHost, int newPort)
         {
-            clientHost = newHost;
-            clientPort = newPort;
-            clientIP = newHost + "." + newPort.ToString();
+            ClientHost = newHost;
+            ClientPort = newPort;
+            ClientIP = newHost + "." + newPort.ToString();
         }
 
 
         public void AddSubject(string sbject)
         {
-            if (!clientSubjects.Contains(sbject))
+            if (!ClientSubjects.Contains(sbject))
             {
-                clientSubjects.Add(sbject);
+                ClientSubjects.Add(sbject);
             }
         }
 
@@ -99,9 +99,9 @@ namespace UDPSocketProject
         {
             foreach (var subject in subjects)
             {
-                if (!clientSubjects.Contains(subject))
+                if (!ClientSubjects.Contains(subject))
                 {
-                    clientSubjects.Add(subject);
+                    ClientSubjects.Add(subject);
                 }
             }
         }
