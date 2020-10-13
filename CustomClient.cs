@@ -71,6 +71,9 @@ namespace UDPSocketProject
         //    port = newport;
         //}
 
+        /// <summary>
+        /// Restart the client connection
+        /// </summary>
         public void RestartClient()
         {
             UdpClient = new UdpClient(new IPEndPoint(IPAddress.Parse(ClientHost), ClientPort));
@@ -78,6 +81,11 @@ namespace UDPSocketProject
             UdpClient.Client.SendTimeout = 3000;
         }
 
+        /// <summary>
+        /// Change the IP on the users request (I think that's how it works?)
+        /// </summary>
+        /// <param name="newHost"></param>
+        /// <param name="newPort"></param>
         public void ChangeIP(string newHost, int newPort)
         {
             ClientHost = newHost;
@@ -86,6 +94,10 @@ namespace UDPSocketProject
         }
 
 
+        /// <summary>
+        /// Add a single subject to the subject list
+        /// </summary>
+        /// <param name="sbject"></param>
         public void AddSubject(string sbject)
         {
             if (!ClientSubjects.Contains(sbject))
@@ -94,14 +106,15 @@ namespace UDPSocketProject
             }
         }
 
+        /// <summary>
+        /// Add an entire list of subjects the user may be interested in
+        /// </summary>
+        /// <param name="subjects"></param>
         public void AddSubjectList(List<string> subjects)
         {
             foreach (var subject in subjects)
             {
-                if (!ClientSubjects.Contains(subject))
-                {
-                    ClientSubjects.Add(subject);
-                }
+                AddSubject(subject);
             }
         }
 
