@@ -15,6 +15,30 @@ namespace UDPSocketProject
 
             server1.Start();
             server2.Start();
+            Thread.Sleep(100);
+            Thread looping = new Thread(() =>
+           {
+               while (true)
+               {
+                   Random random = new Random();
+                   int val = random.Next(30000);
+                   Server.NotifyChange(val, "127.0.0.5");
+               }
+           });
+            Thread seclooping = new Thread(() =>
+            {
+                while (true)
+                {
+                    Random random = new Random();
+                    int val = random.Next(30000);
+                    val += 30000;
+                    dualServer.NotifyChange(val, "127.0.0.5");
+                }
+            });
+            looping.Start();
+            seclooping.Start();
+
+
            /* Server.NotifyChange(6050,"127.0.0.1");
             Thread.Sleep(1000);
             Server.NotifyChange(6051, "127.0.0.3");

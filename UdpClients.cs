@@ -16,6 +16,7 @@ namespace UDPSocketProject
         public bool registered { get; set; }
         public string subject { get; set; }
         public int socketNum { get; set; }
+        public List<string> topics {get; set;}
         #endregion
 
 
@@ -39,14 +40,14 @@ namespace UDPSocketProject
 
 
         //These are already in the properties with .get .set methods, so idk if a function is needed?
-        //public void ModifyIP(IPEndPoint newIP)
-        //{
-        //    ip = newIP;
-        //}
-        //public void ModifySocketNum(int newSocketNum)
-        //{
-        //    socketNum = newSocketNum;
-        //}
+        public void ModifyIP(IPEndPoint newIP)
+        {
+            ip = newIP;
+        }
+        public void ModifySocketNum(int newSocketNum)
+        {
+            socketNum = newSocketNum;
+        }
 
 
         //May be needed if registered gets set to false to remove all the information of the object
