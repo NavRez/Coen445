@@ -35,11 +35,15 @@ namespace UDPSocketProject
             hosts[personalID - 1] = newHost;
             data = new byte[1024];
             ip = new IPEndPoint(IPAddress.Parse(newHost), newPort);
-            Construct(ip);
+            BindSocket(ip);
 
         }
 
-        public void Construct(IPEndPoint endPoint)
+        /// <summary>
+        /// Binds the ip to the socket and sets the timeout values for Send and Receive
+        /// </summary>
+        /// <param name="endPoint"></param>
+        public void BindSocket(IPEndPoint endPoint)
         {
             serverSocket = new UdpClient(endPoint);
             serverSocket.Client.ReceiveTimeout = 5000;
@@ -56,13 +60,21 @@ namespace UDPSocketProject
             while (true)
             {
                 semaphore.WaitOne();
+                internalSemaphore.WaitOne();
+                running = true;
                 if (!stopwatch.IsRunning)
                 {
                     Console.WriteLine("Starting Server {0}", personalID);
                     Console.WriteLine("Waiting for Client...");
-                    if(serverSocket.Client == null)
+
+                    if (serverSocket.Client == null)
                     {
-                        Construct(ip);
+                        BindSocket(ip);
+                    }
+                    else
+                    {
+                        serverSocket.Client.ReceiveTimeout = 5000;
+                        serverSocket.Client.SendTimeout = 5000;
                     }
                     stopwatch.Restart();
                 }
@@ -73,6 +85,7 @@ namespace UDPSocketProject
                     {
                         data = new byte[1024];
                         var sender = new IPEndPoint(IPAddress.Any, 0);
+                        Console.WriteLine("Trying to Receive...");
                         data = serverSocket.Receive(ref sender);
 
                         data = data.Where(x => x != 0x00).ToArray(); // functions inspired from https://stackoverflow.com/questions/13318561/adding-new-line-of-data-to-textbox 
@@ -84,7 +97,13 @@ namespace UDPSocketProject
                         byte[] feed = Encoding.ASCII.GetBytes(newString);
                         serverSocket.Send(feed, feed.Length, sender);
 
-                        if (stopwatch.ElapsedMilliseconds > 10000)
+                        IPEndPoint doupdateServIp = new IPEndPoint(IPAddress.Parse(hosts[personalID % 2]), ports[personalID % 2]);
+                        serverSocket.Connect(doupdateServIp);
+                        //Console.WriteLine("Trying to Send...");
+                        serverSocket.Send(feed, feed.Length);
+
+
+                        if (stopwatch.ElapsedMilliseconds > 11000)
                         {
                             Console.WriteLine("Exiting Server {0} ...", personalID);
                             stopwatch.Stop();
@@ -96,13 +115,19 @@ namespace UDPSocketProject
                     }
                     catch (Exception e)
                     {
-                        if (stopwatch.ElapsedMilliseconds > 15000)
+                        if (stopwatch.ElapsedMilliseconds > 11000)
                         {
                             Console.WriteLine("Exiting Server {0} ...", personalID);
                             stopwatch.Stop();
                             serverSocket.Close();
                             semaphore.Release();
+                            internalSemaphore.Release();
+                            running = false;
                             break;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Operation Failed \n");
                         }
                     }
                 }
@@ -114,8 +139,21 @@ namespace UDPSocketProject
         [ObsoleteAttribute("Busywait function is obsolete. Functionality is implemented in Start function.", false)]
         public void BusyWait()
         {
-            Console.WriteLine("Pausing Server {0} ...", personalID);
             Thread.Sleep(300000);
+        }
+
+        private static bool TrackFunction(TimeSpan timeSpan, Action codeBlock)
+        {
+            try
+            {
+                Task task = Task.Factory.StartNew(() => codeBlock());
+                task.Wait(timeSpan);
+                return task.IsCompleted;
+            }
+            catch (AggregateException ae)
+            {
+                throw ae.InnerExceptions[0];
+            }
         }
 
         /// <summary>
@@ -125,20 +163,94 @@ namespace UDPSocketProject
         /// <param name="changeHost">new hostname of to change towards </param>
         public void NotifyChange(int changePort, string changeHost)
         {
-            IPEndPoint otherServIp = new IPEndPoint(IPAddress.Parse(hosts[personalID % 2]), ports[personalID % 2]);
-            UdpClient tempSocket = new UdpClient();
-            tempSocket.Connect(otherServIp);
+            if (!running)
+            {
+                internalSemaphore.WaitOne();
+                if(!notifyStopwatch.IsRunning)
+                {
+                    IPEndPoint otherServIp = new IPEndPoint(IPAddress.Parse(hosts[personalID % 2]), ports[personalID % 2]);
+                    UdpClient tempSocket = new UdpClient();
+                    tempSocket.Connect(otherServIp);
 
-            string change = "Server " + personalID + " Update, Hostname : " + changeHost + ", Socket : " + changePort;
-            byte[] update = Encoding.ASCII.GetBytes(change);
-            tempSocket.Send(update, update.Length);
+                    string change = "Server " + personalID + " Update, Hostname : " + changeHost + ", Socket : " + changePort;
+                    byte[] update = Encoding.ASCII.GetBytes(change);
+                    tempSocket.Send(update, update.Length);
 
-            ip = new IPEndPoint(IPAddress.Parse(changeHost), changePort);
-            serverSocket = null;
-            serverSocket = new UdpClient(ip);
+                    //ip = new IPEndPoint(IPAddress.Parse(changeHost), changePort);
+                    //serverSocket = null;
+                    //serverSocket = new UdpClient(ip);
+                    //ports[personalID - 1] = changePort;
+                    //hosts[personalID - 1] = changeHost;
+                    notifyStopwatch.Start();
+
+                }
+                else if (notifyStopwatch.ElapsedMilliseconds > 300000)
+                {
+                    notifyStopwatch.Reset();
+                }
+
+                try
+                {
+                    IPEndPoint updateServIp = new IPEndPoint(IPAddress.Parse(hosts[personalID % 2]), ports[personalID % 2]);
+                    if (serverSocket.Client == null)
+                    {
+                        serverSocket.Close();
+                        serverSocket = null;
+                        serverSocket = new UdpClient(ip);
+                    }
+                    bool timeTracker = TrackFunction(TimeSpan.FromSeconds(10), () =>
+                    {
+                        try
+                        {
+                            data = serverSocket.Receive(ref updateServIp);
+                            if (updateServIp.Address.ToString().Equals(hosts[personalID % 2])) {
+                                if(updateServIp.Port == ports[personalID % 2])
+                                {
+                                    Console.WriteLine("External Server {0} out", personalID);
+
+                                    data = data.Where(x => x != 0x00).ToArray(); // functions inspired from https://stackoverflow.com/questions/13318561/adding-new-line-of-data-to-textbox 
+                                    string myString = Encoding.ASCII.GetString(data).Trim();//see link on the aboce line
+
+                                    Console.WriteLine("External Server {0} : {1}", personalID, myString);
+                                    serverSocket.Close();
+                                }
+                                else
+                                {
+                                    throw new InvalidCastException("Address is not other Server");
+                                }
+
+                            }
+                            
+
+                        }
+                        catch(Exception except)
+                        {
+
+                        }
+                        
+                    });
+
+                    
+                    internalSemaphore.Release();
+                    Thread.Sleep(1000);
+
+                }
+                catch (Exception exception)
+                {
+
+                    serverSocket.Close();
+                    internalSemaphore.Release();
+                    Thread.Sleep(1000);
+                }
+
+                
+            }
+
+
 
         }
 
+        
         public class ClientElements
         {
             public ClientElements(string name, string host, int port)
@@ -185,6 +297,7 @@ namespace UDPSocketProject
         protected static int initServer = 0;//a static element that is incremented the moment a server is initalized
         protected int personalID = 0;//
         protected Stopwatch stopwatch = new Stopwatch();
+        protected Stopwatch notifyStopwatch = new Stopwatch();
         public string[] subjects = { "computer engineering", "Disney Marvel", "Pokemon", "Final Fantasy", "Zack Fair", "Mario", "Mexican Studies", "Emojis", "Protocols","US politics" };
 
 
@@ -192,6 +305,8 @@ namespace UDPSocketProject
         protected static int[] ports = new int[2];//retains the ports of the servers
         protected static string[] hosts = new string[2];//retains the hosts of the servers
         public static Semaphore semaphore = new Semaphore(1, 1);
-        public static List<ClientElements> clients = new List<ClientElements>();
+        public Semaphore internalSemaphore = new Semaphore(1, 1);
+        public List<ClientElements> clients = new List<ClientElements>();
+        public bool running = false;
     }
 }
