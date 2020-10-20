@@ -56,9 +56,10 @@ namespace UDPSocketProject
         /// </summary>
         public void Start()
         {
-            
+
             while (true)
             {
+                allowReceive = false;
                 semaphore.WaitOne();
                 internalSemaphore.WaitOne();
                 running = true;
@@ -96,19 +97,23 @@ namespace UDPSocketProject
 
                         byte[] feed = Encoding.ASCII.GetBytes(newString);
                         serverSocket.Send(feed, feed.Length, sender);
+                        Thread.Sleep(200);
 
                         IPEndPoint doupdateServIp = new IPEndPoint(IPAddress.Parse(hosts[personalID % 2]), ports[personalID % 2]);
                         serverSocket.Connect(doupdateServIp);
+                        allowReceive = true;
                         //Console.WriteLine("Trying to Send...");
                         serverSocket.Send(feed, feed.Length);
+                        Thread.Sleep(500);
 
-
-                        if (stopwatch.ElapsedMilliseconds > 11000)
+                        if (stopwatch.ElapsedMilliseconds > 31000)
                         {
                             Console.WriteLine("Exiting Server {0} ...", personalID);
                             stopwatch.Stop();
                             serverSocket.Close();
                             semaphore.Release();
+                            internalSemaphore.Release();
+                            running = false;
                             break;
                         }
 
@@ -127,11 +132,14 @@ namespace UDPSocketProject
                         }
                         else
                         {
-                            Console.WriteLine("Operation Failed \n");
+                            //Console.WriteLine("Operation Failed \n");
                         }
                     }
+
+                    serverSocket.Close();
+                    BindSocket(ip);
                 }
-                
+
             }
 
         }
@@ -166,7 +174,7 @@ namespace UDPSocketProject
             if (!running)
             {
                 internalSemaphore.WaitOne();
-                if(!notifyStopwatch.IsRunning)
+                if (!notifyStopwatch.IsRunning)
                 {
                     IPEndPoint otherServIp = new IPEndPoint(IPAddress.Parse(hosts[personalID % 2]), ports[personalID % 2]);
                     UdpClient tempSocket = new UdpClient();
@@ -198,20 +206,30 @@ namespace UDPSocketProject
                         serverSocket = null;
                         serverSocket = new UdpClient(ip);
                     }
-                    bool timeTracker = TrackFunction(TimeSpan.FromSeconds(10), () =>
+                    bool timeTracker = TrackFunction(TimeSpan.FromSeconds(5), () =>
                     {
                         try
                         {
-                            data = serverSocket.Receive(ref updateServIp);
-                            if (updateServIp.Address.ToString().Equals(hosts[personalID % 2])) {
-                                if(updateServIp.Port == ports[personalID % 2])
+                            if(allowReceive)
+                            {
+                                Thread.Sleep(500);
+                                data = serverSocket.Receive(ref updateServIp);
+                            }
+                            
+                            if (updateServIp.Address.ToString().Equals(hosts[personalID % 2]))
+                            {
+                                if (updateServIp.Port == ports[personalID % 2])
                                 {
-                                    Console.WriteLine("External Server {0} out", personalID);
+                                    
 
                                     data = data.Where(x => x != 0x00).ToArray(); // functions inspired from https://stackoverflow.com/questions/13318561/adding-new-line-of-data-to-textbox 
                                     string myString = Encoding.ASCII.GetString(data).Trim();//see link on the aboce line
+                                    if (!myString.Equals(""))
+                                    {
+                                        Console.WriteLine("External Server {0} out", personalID);
+                                        Console.WriteLine("External Server {0} : {1}", personalID, myString);
 
-                                    Console.WriteLine("External Server {0} : {1}", personalID, myString);
+                                    }
                                     serverSocket.Close();
                                 }
                                 else
@@ -220,17 +238,17 @@ namespace UDPSocketProject
                                 }
 
                             }
-                            
+
 
                         }
-                        catch(Exception except)
+                        catch (Exception except)
                         {
 
                         }
-                        
+
                     });
 
-                    
+
                     internalSemaphore.Release();
                     Thread.Sleep(1000);
 
@@ -243,14 +261,14 @@ namespace UDPSocketProject
                     Thread.Sleep(1000);
                 }
 
-                
+
             }
 
 
 
         }
 
-        
+
         public class ClientElements
         {
             public ClientElements(string name, string host, int port)
@@ -261,7 +279,7 @@ namespace UDPSocketProject
                 ipAdress = clientHost + "." + clientHost.ToString();
             }
 
-            public ClientElements(string name,string host,int port,List<string> subs)
+            public ClientElements(string name, string host, int port, List<string> subs)
             {
                 clientName = name;
                 clientHost = host;
@@ -270,9 +288,9 @@ namespace UDPSocketProject
                 ipAdress = clientHost + "." + clientHost.ToString();
             }
 
-            public void resetSubjects(List<string> newSubs) 
+            public void resetSubjects(List<string> newSubs)
             {
-                clientSubjects = newSubs; 
+                clientSubjects = newSubs;
             }
 
             public void changeIP(string newHost, int newPort)
@@ -298,8 +316,8 @@ namespace UDPSocketProject
         protected int personalID = 0;//
         protected Stopwatch stopwatch = new Stopwatch();
         protected Stopwatch notifyStopwatch = new Stopwatch();
-        public string[] subjects = { "computer engineering", "Disney Marvel", "Pokemon", "Final Fantasy", "Zack Fair", "Mario", "Mexican Studies", "Emojis", "Protocols","US politics" };
-
+        public string[] subjects = { "computer engineering", "Disney Marvel", "Pokemon", "Final Fantasy", "Zack Fair", "Mario", "Mexican Studies", "Emojis", "Protocols", "US politics" };
+        public static bool allowReceive = false;
 
         //shared information between servers
         protected static int[] ports = new int[2];//retains the ports of the servers
