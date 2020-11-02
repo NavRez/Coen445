@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 
 namespace UDPSocketProject
@@ -7,14 +9,76 @@ namespace UDPSocketProject
     {
         static void Main(string[] args)
         {
-            UdpServer Server = new UdpServer(8080, "127.0.0.2");
-            UdpServer dualServer = new UdpServer(5080, "127.0.0.2");
+            UdpServer Server = new UdpServer("127.0.0.2", 8080);
+            UdpServer dualServer = new UdpServer("127.0.0.2", 5080);
 
             Thread server1 = new Thread(Server.Start);
             Thread server2 = new Thread(dualServer.Start);
 
             server1.Start();
             server2.Start();
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            /*
+            Thread thread3 = new Thread(() => {
+                try
+                {
+
+                    byte[] bus = new byte[1024];
+                    var ip = new IPEndPoint(IPAddress.Parse("127.0.0.2"), 5080);
+                    var clienting = new UdpClient(ip);
+                    bus = clienting.Receive(ref ip);
+                    Console.WriteLine("printing : {0}, from {1}", bus.ToString(),1);
+
+
+                }
+                catch(Exception exc)
+                {
+                    Console.WriteLine(exc.Message);
+                }
+
+
+            });
+            Thread thread4 = new Thread(() => {
+                try
+                {
+                    byte[] bus = new byte[1024];
+                    var ip = new IPEndPoint(IPAddress.Parse("127.0.0.2"), 5081);
+                    var clienting = new UdpClient(ip);
+                    bus = clienting.Receive(ref ip);
+                    Console.WriteLine("printing : {0}, from {1}", bus.ToString(), 2);
+
+                }
+                catch (Exception exc)
+                {
+
+                    Console.WriteLine(exc.Message);
+                }
+
+
+            });
+            Thread thread5 = new Thread(() => {
+                try
+                {
+
+                    byte[] bus = new byte[1024];
+                    var ip = new IPEndPoint(IPAddress.Parse("127.0.0.2"), 5082);
+                    var clienting = new UdpClient(ip);
+                    bus = clienting.Receive(ref ip);
+                    Console.WriteLine("printing : {0}, from {1}", bus.ToString(), 3);
+                }
+                catch (Exception exc)
+                {
+
+                    Console.WriteLine(exc.Message);
+                }
+
+
+            });
+            //thread3.Start();
+            //thread4.Start();
+            //thread5.Start();
+            */
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             Thread.Sleep(100);
             Thread looping = new Thread(() =>
             {
@@ -32,7 +96,7 @@ namespace UDPSocketProject
                     Random random = new Random();
                     int val = random.Next(30000);
                     val += 30000;
-                    dualServer.NotifyChange(val, "127.0.0.5");
+                    //dualServer.NotifyChange(val, "127.0.0.5");
                 }
             });
             looping.Start();
