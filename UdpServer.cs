@@ -102,7 +102,7 @@ namespace UDPSocketProject
                         IPEndPoint doupdateServIp = new IPEndPoint(IPAddress.Parse(hosts[personalID % 2]), ports[personalID % 2]);
                         serverSocket.Connect(doupdateServIp);
                         allowReceive = true;
-                        //Console.WriteLine("Trying to Send...");
+
                         serverSocket.Send(feed, feed.Length);
                         Thread.Sleep(500);
 
@@ -110,7 +110,6 @@ namespace UDPSocketProject
                         {
                             Console.WriteLine("Exiting Server {0} ...", personalID);
                             stopwatch.Stop();
-                            //serverSocket.Client.Disconnect(true);
                             serverSocket.Close();
                             semaphore.Release();
                             internalSemaphore.Release();
@@ -125,7 +124,6 @@ namespace UDPSocketProject
                         {
                             Console.WriteLine("Exiting Server {0} ...", personalID);
                             stopwatch.Stop();
-                            //serverSocket.Client.Disconnect(true);
                             serverSocket.Close();
                             semaphore.Release();
                             internalSemaphore.Release();
@@ -137,7 +135,7 @@ namespace UDPSocketProject
                             //Console.WriteLine("Operation Failed \n");
                         }
                     }
-                    //serverSocket.Client.Disconnect(true);
+
 
                     serverSocket.Close();
                     BindSocket(ip);
@@ -191,7 +189,6 @@ namespace UDPSocketProject
                         tempSocket.Connect(otherServIp);
 
                         //ip = new IPEndPoint(IPAddress.Parse(changeHost), changePort);
-                        //serverSocket.Client.Disconnect(true);
                         //serverSocket.Close();
                         //serverSocket = null;
                         //serverSocket = new UdpClient(ip);
@@ -221,7 +218,6 @@ namespace UDPSocketProject
                     IPEndPoint updateServIp = new IPEndPoint(IPAddress.Parse(hosts[personalID % 2]), ports[personalID % 2]);
                     if (serverSocket.Client == null)
                     {
-                        //serverSocket.Client.Disconnect(true);
                         serverSocket.Close();
                         serverSocket = null;
                         serverSocket = new UdpClient(ip);
@@ -249,7 +245,6 @@ namespace UDPSocketProject
                                             Console.WriteLine("External Server {0} : {1}", personalID, myString);
 
                                         }
-                                        //serverSocket.Client.Disconnect(true);
                                         serverSocket.Close();
                                     }
                                     else
@@ -275,7 +270,6 @@ namespace UDPSocketProject
                 }
                 catch (Exception exception)
                 {
-                    //serverSocket.Client.Disconnect(true);
                     serverSocket.Close();
                     internalSemaphore.Release();
                     Thread.Sleep(1000);
