@@ -92,10 +92,12 @@ namespace UDPSocketProject
                         data = data.Where(x => x != 0x00).ToArray(); // functions inspired from https://stackoverflow.com/questions/13318561/adding-new-line-of-data-to-textbox 
                         string myString = Encoding.ASCII.GetString(data).Trim();//see link on the aboce line
 
+                        string[] arr = myString.Split(",");
+                        
                         Console.WriteLine("Server {0} : {1}", personalID, myString);
                         string newString = "String " + myString + " has been received from " + personalID.ToString();
 
-                        byte[] feed = Encoding.ASCII.GetBytes("7");
+                        byte[] feed = Encoding.ASCII.GetBytes(clientTest.SwitchCase(myString));
                         serverSocket.Send(feed, feed.Length, sender);
                         Thread.Sleep(200);
 
@@ -282,46 +284,8 @@ namespace UDPSocketProject
 
         }
 
-
-        public class ClientElements
-        {
-            public ClientElements(string name, string host, int port)
-            {
-                clientName = name;
-                clientHost = host;
-                clientPort = port;
-                ipAdress = clientHost + "." + clientHost.ToString();
-            }
-
-            public ClientElements(string name, string host, int port, List<string> subs)
-            {
-                clientName = name;
-                clientHost = host;
-                clientPort = port;
-                clientSubjects = subs;
-                ipAdress = clientHost + "." + clientHost.ToString();
-            }
-
-            public void resetSubjects(List<string> newSubs)
-            {
-                clientSubjects = newSubs;
-            }
-
-            public void changeIP(string newHost, int newPort)
-            {
-                clientHost = newHost;
-                clientPort = newPort;
-                ipAdress = newHost + "." + newPort.ToString();
-            }
-
-            private string clientName;
-            private string clientHost;
-            private string ipAdress;
-            private int clientPort;
-            private List<string> clientSubjects;
-
-        }
-
+        public ClientEventHandler clientTest = new ClientEventHandler();
+        
         //these attributes are unique to each server
         protected UdpClient serverSocket;//protected socket element
         protected IPEndPoint ip;//the ip of the server
@@ -338,7 +302,6 @@ namespace UDPSocketProject
         protected static string[] hosts = new string[2];//retains the hosts of the servers
         public static Semaphore semaphore = new Semaphore(1, 1);
         public Semaphore internalSemaphore = new Semaphore(1, 1);
-        public List<ClientElements> clients = new List<ClientElements>();
         public bool running = false;
     }
 }
