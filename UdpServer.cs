@@ -97,7 +97,28 @@ namespace UDPSocketProject
                         Console.WriteLine("Server {0} : {1}", personalID, myString);
                         string newString = "String " + myString + " has been received from " + personalID.ToString();
 
-                        byte[] feed = Encoding.ASCII.GetBytes(clientTest.SwitchCase(myString));
+                        byte[] feed = Encoding.ASCII.GetBytes(myString);
+
+                        if(myString.Equals("connect user request"))
+                        {
+                            feed = Encoding.ASCII.GetBytes("user connected");
+                        }
+
+                        if (myString.Equals("remove user request"))
+                        {
+                            feed = Encoding.ASCII.GetBytes("user removed");
+                        }
+
+                        if(myString.Equals("send submit"))
+                        {
+                            feed = Encoding.ASCII.GetBytes("submit received");
+                        }
+
+                        if(myString.Equals("send updated list"))
+                        {
+                            feed = Encoding.ASCII.GetBytes("updated list received");
+                        }
+                        
                         serverSocket.Send(feed, feed.Length, sender);
                         Thread.Sleep(200);
 
