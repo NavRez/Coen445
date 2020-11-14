@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
+using System.Text;
 
 namespace UDPSocketProject
 {
@@ -53,7 +55,7 @@ namespace UDPSocketProject
 
         public List<ClientElements> clients = new List<ClientElements>();
 
-        public string SwitchCase(string incomingInfo)
+        public string SwitchCase(string incomingInfo,UdpClient socket)
         {
             string[] array = incomingInfo.Split(",");
 
@@ -114,6 +116,26 @@ namespace UDPSocketProject
                     {
                         message = "UPDATE-DENIED,";
                         message += RQ + "," + Name + "does not exist";
+                    }
+                    return message;
+                    break;
+                case "PUBLISH":
+                    string subj = array[3];
+                    string userMessage = array[4];
+
+                    message = String.Format("MESSAGE,{0},{1},{2}", Name, subj, userMessage);
+                    foreach (ClientElements element in clients)
+                    {
+                        if (element.clientSubjects.Contains(subj))
+                        {
+                            IPEndPoint clientIP = new IPEndPoint(IPAddress.Parse(element.clientHost), element.clientPort);
+                            byte[] userFeed = Encoding.ASCII.GetBytes(message);
+                            socket.Send(userFeed, userFeed.Length, clientIP);
+                        }
+                        else
+                        {
+                            continue;
+                        }
                     }
                     return message;
                     break;

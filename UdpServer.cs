@@ -56,12 +56,16 @@ namespace UDPSocketProject
         /// </summary>
         public void Start()
         {
+            //The code should never reach this point. But since it exited abruptly without explanation, this is left as a last resort safety net
+            Unbound:
 
             while (true)
             {
-                allowReceive = false;
                 semaphore.WaitOne();
+                allowReceive = false;
+                Console.WriteLine("moving past first Semaphore in Server {0} ",personalID);
                 internalSemaphore.WaitOne();
+                Console.WriteLine("moving past internal Semaphore in Server {0} ", personalID);
                 running = true;
                 if (!stopwatch.IsRunning)
                 {
@@ -97,7 +101,7 @@ namespace UDPSocketProject
                         Console.WriteLine("Server {0} : {1}", personalID, myString);
                         string newString = "String " + myString + " has been received from " + personalID.ToString();
 
-                        byte[] feed = Encoding.ASCII.GetBytes(myString);
+                        byte[] feed = Encoding.ASCII.GetBytes(newString);
 
                         if(myString.Equals("connect user request"))
                         {
@@ -143,7 +147,7 @@ namespace UDPSocketProject
                     }
                     catch (Exception e)
                     {
-                        if (stopwatch.ElapsedMilliseconds > 11000)
+                        if (stopwatch.ElapsedMilliseconds > 31000)
                         {
                             Console.WriteLine("Exiting Server {0} ...", personalID);
                             stopwatch.Stop();
@@ -165,6 +169,9 @@ namespace UDPSocketProject
                 }
 
             }
+
+            //The goto code is unreachable and would ideally never be reached. But beacause of the unexpected behaviour that occasionally occured. this is kept as a last-resort saftey net 
+            goto Unbound;
 
         }
 
@@ -200,11 +207,14 @@ namespace UDPSocketProject
         /// <param name="changeHost">new hostname of to change towards </param>
         public void NotifyChange(int changePort, string changeHost)
         {
-            if (!running)
+            Thread.Sleep(1000);
+            internalSemaphore.WaitOne();
+            while (true)
             {
-                internalSemaphore.WaitOne();
+                
                 if (!notifyStopwatch.IsRunning)
                 {
+                    Console.WriteLine("Going into update in NotifyChange");
                     try
                     {
                         IPEndPoint otherServIp = new IPEndPoint(IPAddress.Parse(hosts[personalID % 2]), ports[personalID % 2]);
@@ -222,18 +232,18 @@ namespace UDPSocketProject
                         byte[] update = Encoding.ASCII.GetBytes(change);
                         tempSocket.Send(update, update.Length);
 
-                        notifyStopwatch.Start();
+                        notifyStopwatch.Restart();
 
                     }
                     catch (SocketException sameSoc)
                     {
-                        notifyStopwatch.Start();
+                        notifyStopwatch.Restart();
+                    }
+                    catch (System.FormatException forsec)
+                    {
+                        notifyStopwatch.Restart();
                     }
                     
-                }
-                else if (notifyStopwatch.ElapsedMilliseconds > 300000)
-                {
-                    notifyStopwatch.Reset();
                 }
 
                 try
@@ -244,13 +254,15 @@ namespace UDPSocketProject
                         serverSocket.Close();
                         serverSocket = null;
                         serverSocket = new UdpClient(ip);
+                        serverSocket.Client.ReceiveTimeout = 5000;
                     }
-                    bool timeTracker = TrackFunction(TimeSpan.FromSeconds(15), () =>
-                    {
+                    //bool timeTracker = TrackFunction(TimeSpan.FromSeconds(7), () =>
+                    //{
                         try
                         {
-                            if(allowReceive)
-                            {
+                            //if(allowReceive)
+                            //{
+                                Console.WriteLine("entering the trackfunc");
                                 data = serverSocket.Receive(ref updateServIp);
                             
                             
@@ -277,25 +289,41 @@ namespace UDPSocketProject
 
                                 }
 
-                            }
+                            //}
+                        }
+                        catch(SocketException timeOut)
+                        {
+                            Console.WriteLine("Could not receive packets from sibling server");
                         }
                         catch (Exception except)
                         {
-
+                            except.ToString();
                         }
 
-                    });
+                    //});
 
-
-                    internalSemaphore.Release();
-                    Thread.Sleep(1000);
+                    
 
                 }
                 catch (Exception exception)
                 {
+                    if (notifyStopwatch.ElapsedMilliseconds > 31000)
+                    {
+                        Console.WriteLine("Exception : Exiting dormant {0} ...", personalID);
+                        serverSocket.Close();
+                        internalSemaphore.Release();
+                        notifyStopwatch.Stop();
+                        break;
+                    }
+                }
+
+                if (notifyStopwatch.ElapsedMilliseconds > 31000)
+                {
+                    Console.WriteLine("Exiting dormant {0} ...", personalID);
                     serverSocket.Close();
                     internalSemaphore.Release();
-                    Thread.Sleep(1000);
+                    notifyStopwatch.Stop();
+                    break;
                 }
 
 
@@ -316,12 +344,12 @@ namespace UDPSocketProject
         protected Stopwatch stopwatch = new Stopwatch();
         protected Stopwatch notifyStopwatch = new Stopwatch();
         public string[] subjects = { "computer engineering", "Disney Marvel", "Pokemon", "Final Fantasy", "Zack Fair", "Mario", "Mexican Studies", "Calculus", "Protocols", "US politics" };
-        public static bool allowReceive = false;
+        public static bool allowReceive = true;
 
         //shared information between servers
-        protected static int[] ports = new int[2];//retains the ports of the servers
-        protected static string[] hosts = new string[2];//retains the hosts of the servers
-        public static Semaphore semaphore = new Semaphore(1, 1);
+        protected static int[] ports = {8080, 5080};//retains the ports of the servers
+        protected static string[] hosts = {"127.0.0.2", "127.0.0.2"};//retains the hosts of the servers
+        public static Semaphore semaphore = new Semaphore(1, 1,"Originate");
         public Semaphore internalSemaphore = new Semaphore(1, 1);
         public bool running = false;
     }

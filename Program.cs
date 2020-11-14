@@ -7,16 +7,57 @@ namespace UDPSocketProject
 {
     class Program
     {
+        static int v = 0;
         static void Main(string[] args)
         {
-            UdpServer Server = new UdpServer("127.0.0.2", 8080);
-            UdpServer dualServer = new UdpServer("127.0.0.2", 5080);
+            try
+            {
+                int val = 8080;
+                UdpServer Server = new UdpServer("127.0.0.2", val);
+                //UdpServer dualServer = new UdpServer("127.0.0.2", 5080);
+                Thread server1 = new Thread(Server.Start);
+                //Thread server2 = new Thread(dualServer.Start);
 
-            Thread server1 = new Thread(Server.Start);
-            Thread server2 = new Thread(dualServer.Start);
+                server1.Start();
 
-            server1.Start();
-            server2.Start();
+                Thread looping1 = new Thread(() =>
+                {
+                    while (true)
+                    {
+                        Random random = new Random();
+                        int val = random.Next(30000);
+                        Server.NotifyChange(val, "127.0.0.5");
+                    }
+                });
+
+                looping1.Start();
+
+            }
+            catch
+            {
+                int val = 5080;
+                UdpServer Server2 = new UdpServer("127.0.0.2", val);
+                //UdpServer dualServer = new UdpServer("127.0.0.2", 5080);
+
+                Thread server2 = new Thread(Server2.Start);
+                //Thread server2 = new Thread(dualServer.Start);
+
+                server2.Start();
+
+                Thread seclooping1 = new Thread(() =>
+                {
+                    while (true)
+                    {
+                        Random random = new Random();
+                        int val = random.Next(30000);
+                        val += 30000;
+                        Server2.NotifyChange(val, "127.0.0.5");
+                    }
+                });
+
+                seclooping1.Start();
+            }
+            //server2.Start();
             ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             /*
             Thread thread3 = new Thread(() => {
@@ -107,8 +148,8 @@ namespace UDPSocketProject
                     //dualServer.NotifyChange(val, "127.0.0.5");
                 }
             });
-            looping.Start();
-            seclooping.Start();
+            //looping.Start();
+            //seclooping.Start();
 
 
         }
