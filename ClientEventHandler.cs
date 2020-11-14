@@ -49,7 +49,7 @@ namespace UDPSocketProject
             public string clientHost;
             public string ipAdress;
             public int clientPort;
-            public List<string> clientSubjects;
+            public List<string> clientSubjects = new List<string>();
 
         }
 
@@ -122,7 +122,7 @@ namespace UDPSocketProject
                 case "PUBLISH":
                     string subj = array[3];
                     string userMessage = array[4];
-
+                    int counter = 0;
                     message = String.Format("MESSAGE,{0},{1},{2}", Name, subj, userMessage);
                     foreach (ClientElements element in clients)
                     {
@@ -131,12 +131,35 @@ namespace UDPSocketProject
                             IPEndPoint clientIP = new IPEndPoint(IPAddress.Parse(element.clientHost), element.clientPort);
                             byte[] userFeed = Encoding.ASCII.GetBytes(message);
                             socket.Send(userFeed, userFeed.Length, clientIP);
+                            counter++;
                         }
                         else
                         {
                             continue;
                         }
                     }
+
+                    if (counter == 0) {
+
+                        message = String.Format("PUBLISH-DENIED,{0},{1}, Error, no clients contain such a subject", Name, subj);
+                    }
+
+                    return message;
+                    break;
+                case "SUBJECTS":
+                    if (clients.Any(i => i.clientName.Equals(Name)))
+                    {
+                        var element = clients.Find(obj => obj.clientName.Equals(Name));
+                        element.clientSubjects = new List<string>();
+                        List<string> newSubs = array[3].Split("@").ToList();
+                        element.clientSubjects = newSubs;
+                        message = String.Format("SUBJECTS-UPDATED,{0},{1},{2}", RQ, Name, array[3]);
+                    }
+                    else
+                    {
+                        message = String.Format("SUBJECTS-REJECTED,{0},{1},{2}", RQ, Name, array[3]);
+                    }
+                        
                     return message;
                     break;
                 default:
