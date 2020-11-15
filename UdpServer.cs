@@ -28,7 +28,7 @@ namespace UDPSocketProject
         /// </summary>
         /// <param name="newPort">the port assigned to a new UdpServer </param>
         /// <param name="newHost">host assinged to a new Udp Server</param>
-        public UdpServer(string newHost,int newPort)
+        public UdpServer(string newHost, int newPort)
         {
             personalID = ++initServer;
             ports[personalID - 1] = newPort;
@@ -56,14 +56,14 @@ namespace UDPSocketProject
         /// </summary>
         public void Start()
         {
-            //The code should never reach this point. But since it exited abruptly without explanation, this is left as a last resort safety net
-            Unbound:
+        //The code should never reach this point. But since it exited abruptly without explanation, this is left as a last resort safety net
+        Unbound:
 
             while (true)
             {
                 semaphore.WaitOne();
                 allowReceive = false;
-                Console.WriteLine("moving past first Semaphore in Server {0} ",personalID);
+                Console.WriteLine("moving past first Semaphore in Server {0} ", personalID);
                 internalSemaphore.WaitOne();
                 Console.WriteLine("moving past internal Semaphore in Server {0} ", personalID);
                 running = true;
@@ -97,7 +97,7 @@ namespace UDPSocketProject
                         string myString = Encoding.ASCII.GetString(data).Trim();//see link on the aboce line
 
                         string[] arr = myString.Split(",");
-                        
+
                         Console.WriteLine("Server {0} : {1}", personalID, myString);
                         string newString = "String " + myString + " has been received from " + personalID.ToString();
 
@@ -125,7 +125,8 @@ namespace UDPSocketProject
                         //{
                         //    feed = Encoding.ASCII.GetBytes("updated list received");
                         //}
-                        if (serverResponse.Contains("MESSAGE")) {
+                        if (serverResponse.Contains("MESSAGE"))
+                        {
 
                             continue;
                         }
@@ -166,7 +167,14 @@ namespace UDPSocketProject
                         {
                             IPEndPoint doupdateServIp = new IPEndPoint(IPAddress.Parse(hosts[personalID % 2]), ports[personalID % 2]);
                             clientTest.ChangeServer(serverSocket, hosts[personalID % 2], ports[personalID % 2]);
-                            serverSocket.Connect(doupdateServIp);
+                            try
+                            {
+                                serverSocket.Connect(doupdateServIp);
+                            }
+                            catch(Exception error)
+                            {
+
+                            }
                             byte[] feed = Encoding.ASCII.GetBytes("CHANGE");
                             serverSocket.Send(feed, feed.Length);
 
@@ -232,10 +240,10 @@ namespace UDPSocketProject
             internalSemaphore.WaitOne();
             while (true)
             {
-                
+
                 if (!notifyStopwatch.IsRunning)
                 {
-                    Console.WriteLine("Going into update in NotifyChange"); 
+                    Console.WriteLine("Going into update in NotifyChange");
                     try
                     {
                         IPEndPoint otherServIp = new IPEndPoint(IPAddress.Parse(hosts[personalID % 2]), ports[personalID % 2]);
@@ -265,7 +273,7 @@ namespace UDPSocketProject
                     {
                         notifyStopwatch.Restart();
                     }
-                    
+
                 }
 
                 try
@@ -280,67 +288,68 @@ namespace UDPSocketProject
                     }
                     //bool timeTracker = TrackFunction(TimeSpan.FromSeconds(7), () =>
                     //{
-                        try
+                    try
+                    {
+                        //if(allowReceive)
+                        //{
+                        Console.WriteLine("entering the trackfunc");
+                        serverSocket.Connect(hosts[personalID % 2], ports[personalID % 2]);
+                        data = serverSocket.Receive(ref updateServIp);
+
+
+                        if (updateServIp.Address.ToString().Equals(hosts[personalID % 2]))
                         {
-                            //if(allowReceive)
-                            //{
-                                Console.WriteLine("entering the trackfunc");
-                                serverSocket.Connect(hosts[personalID % 2], ports[personalID % 2]);
-                                data = serverSocket.Receive(ref updateServIp);
-                            
-                            
-                                if (updateServIp.Address.ToString().Equals(hosts[personalID % 2]))
+                            if (updateServIp.Port == ports[personalID % 2])
+                            {
+
+
+                                data = data.Where(x => x != 0x00).ToArray(); // functions inspired from https://stackoverflow.com/questions/13318561/adding-new-line-of-data-to-textbox 
+                                string myString = Encoding.ASCII.GetString(data).Trim();//see link on the aboce line
+                                if (myString.Equals("CHANGE"))
                                 {
-                                    if (updateServIp.Port == ports[personalID % 2])
-                                    {
+                                    int a = 0;
+                                    a = a / 0;
+                                }
+                                if (!myString.Equals(""))
+                                {
+                                    Console.WriteLine("External Server {0} out", personalID);
+                                    Console.WriteLine("External Server {0} : {1}", personalID, myString);
+                                    clientTest.DromantServerReceive(myString);
                                     
 
-                                        data = data.Where(x => x != 0x00).ToArray(); // functions inspired from https://stackoverflow.com/questions/13318561/adding-new-line-of-data-to-textbox 
-                                        string myString = Encoding.ASCII.GetString(data).Trim();//see link on the aboce line
-                                        if (!myString.Equals(""))
-                                        {
-                                            Console.WriteLine("External Server {0} out", personalID);
-                                            Console.WriteLine("External Server {0} : {1}", personalID, myString);
-
-                                            if (myString.Equals("CHANGE"))
-                                            {
-                                                int a = 1;
-                                                a = a / 0;
-                                            }
-
-                                        }
-                                        serverSocket.Close();
-                                    }
-                                    else
-                                    {
-                                        throw new InvalidCastException("Address is not other Server");
-                                    }
-
                                 }
+                                serverSocket.Close();
+                            }
+                            else
+                            {
+                                throw new InvalidCastException("Address is not other Server");
+                            }
 
-                            //}
                         }
-                        catch(SocketException timeOut)
-                        {
-                            Console.WriteLine("Could not receive packets from sibling server");
-                        }
-                        catch(DivideByZeroException div)
-                        {
-                            Console.WriteLine("Server Replacement Call : Exiting dormant {0} ...", personalID);
-                            serverSocket.Close();
-                            internalSemaphore.Release();
-                            notifyStopwatch.Stop();
-                            Thread.Sleep(1000);
-                            break;
-                        }
-                        catch (Exception except)
-                        {
-                            except.ToString();
-                        }
+
+                        //}
+                    }
+                    catch (SocketException timeOut)
+                    {
+                        Console.WriteLine("Could not receive packets from sibling server");
+                    }
+                    catch(DivideByZeroException zero)
+                    {
+                        Console.WriteLine("Server Replacement Call : Exiting dormant {0} ...", personalID);
+                        serverSocket.Close();
+                        internalSemaphore.Release();
+                        notifyStopwatch.Stop();
+                        Thread.Sleep(1000);
+                        break;
+                    }
+                    catch (Exception except)
+                    {
+                        except.ToString();
+                    }
 
                     //});
 
-                    
+
 
                 }
                 catch (Exception exception)
@@ -374,7 +383,7 @@ namespace UDPSocketProject
         }
 
         public ClientEventHandler clientTest = new ClientEventHandler();
-        
+
         //these attributes are unique to each server
         protected UdpClient serverSocket;//protected socket element
         protected IPEndPoint ip;//the ip of the server
@@ -387,9 +396,9 @@ namespace UDPSocketProject
         public static bool allowReceive = true;
 
         //shared information between servers
-        protected static int[] ports = {8080, 5080};//retains the ports of the servers
-        protected static string[] hosts = {"127.0.0.2", "127.0.0.2"};//retains the hosts of the servers
-        public static Semaphore semaphore = new Semaphore(1, 1,"Originate");
+        protected static int[] ports = { 8080, 5080 };//retains the ports of the servers
+        protected static string[] hosts = { "127.0.0.2", "127.0.0.2" };//retains the hosts of the servers
+        public static Semaphore semaphore = new Semaphore(1, 1, "Originate");
         public Semaphore internalSemaphore = new Semaphore(1, 1);
         public bool running = false;
     }
