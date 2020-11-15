@@ -168,5 +168,16 @@ namespace UDPSocketProject
             }
 
         }
+
+        public void ChangeServer(UdpClient socket, string changeHost, int changePort)
+        {
+            string message = String.Format("CHANGE-SERVER,{0},{1}", changeHost, changePort);
+            foreach (ClientElements element in clients)
+            {
+                IPEndPoint clientIP = new IPEndPoint(IPAddress.Parse(element.clientHost), element.clientPort);
+                byte[] userFeed = Encoding.ASCII.GetBytes(message);
+                socket.Send(userFeed, userFeed.Length, clientIP);
+            }
+        }
     }
 }

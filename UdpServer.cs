@@ -143,8 +143,13 @@ namespace UDPSocketProject
                         serverSocket.Send(feed, feed.Length);
                         Thread.Sleep(500);
 
-                        if (stopwatch.ElapsedMilliseconds > 31000)
+                        if (stopwatch.ElapsedMilliseconds > 11000)
                         {
+                            clientTest.ChangeServer(serverSocket, hosts[personalID % 2], ports[personalID % 2]);
+                            serverSocket.Connect(doupdateServIp);
+                            feed = Encoding.ASCII.GetBytes("CHANGE");
+                            serverSocket.Send(feed, feed.Length);
+
                             Console.WriteLine("Exiting Server {0} ...", personalID);
                             stopwatch.Stop();
                             serverSocket.Close();
@@ -157,8 +162,14 @@ namespace UDPSocketProject
                     }
                     catch (Exception e)
                     {
-                        if (stopwatch.ElapsedMilliseconds > 31000)
+                        if (stopwatch.ElapsedMilliseconds > 11000)
                         {
+                            IPEndPoint doupdateServIp = new IPEndPoint(IPAddress.Parse(hosts[personalID % 2]), ports[personalID % 2]);
+                            clientTest.ChangeServer(serverSocket, hosts[personalID % 2], ports[personalID % 2]);
+                            serverSocket.Connect(doupdateServIp);
+                            byte[] feed = Encoding.ASCII.GetBytes("CHANGE");
+                            serverSocket.Send(feed, feed.Length);
+
                             Console.WriteLine("Exiting Server {0} ...", personalID);
                             stopwatch.Stop();
                             serverSocket.Close();
@@ -238,11 +249,12 @@ namespace UDPSocketProject
                         //ports[personalID - 1] = changePort;
                         //hosts[personalID - 1] = changeHost;
 
-                        string change = "Server " + personalID + " Update, Hostname : " + changeHost + ", Socket : " + changePort;
+                        string change = String.Format("SERVER-UPDATE,{0},{1}", changeHost, changePort);
                         byte[] update = Encoding.ASCII.GetBytes(change);
                         tempSocket.Send(update, update.Length);
 
                         notifyStopwatch.Restart();
+                        Console.WriteLine("Restarted stopwatch in update");
 
                     }
                     catch (SocketException sameSoc)
@@ -273,6 +285,7 @@ namespace UDPSocketProject
                             //if(allowReceive)
                             //{
                                 Console.WriteLine("entering the trackfunc");
+                                serverSocket.Connect(hosts[personalID % 2], ports[personalID % 2]);
                                 data = serverSocket.Receive(ref updateServIp);
                             
                             
@@ -288,6 +301,12 @@ namespace UDPSocketProject
                                         {
                                             Console.WriteLine("External Server {0} out", personalID);
                                             Console.WriteLine("External Server {0} : {1}", personalID, myString);
+
+                                            if (myString.Equals("CHANGE"))
+                                            {
+                                                int a = 1;
+                                                a = a / 0;
+                                            }
 
                                         }
                                         serverSocket.Close();
@@ -305,6 +324,15 @@ namespace UDPSocketProject
                         {
                             Console.WriteLine("Could not receive packets from sibling server");
                         }
+                        catch(DivideByZeroException div)
+                        {
+                            Console.WriteLine("Server Replacement Call : Exiting dormant {0} ...", personalID);
+                            serverSocket.Close();
+                            internalSemaphore.Release();
+                            notifyStopwatch.Stop();
+                            Thread.Sleep(1000);
+                            break;
+                        }
                         catch (Exception except)
                         {
                             except.ToString();
@@ -317,22 +345,24 @@ namespace UDPSocketProject
                 }
                 catch (Exception exception)
                 {
-                    if (notifyStopwatch.ElapsedMilliseconds > 31000)
+                    if (notifyStopwatch.ElapsedMilliseconds > 19000)
                     {
                         Console.WriteLine("Exception : Exiting dormant {0} ...", personalID);
                         serverSocket.Close();
                         internalSemaphore.Release();
                         notifyStopwatch.Stop();
+                        Thread.Sleep(1000);
                         break;
                     }
                 }
 
-                if (notifyStopwatch.ElapsedMilliseconds > 31000)
+                if (notifyStopwatch.ElapsedMilliseconds > 19000)
                 {
                     Console.WriteLine("Exiting dormant {0} ...", personalID);
                     serverSocket.Close();
                     internalSemaphore.Release();
                     notifyStopwatch.Stop();
+                    Thread.Sleep(1000);
                     break;
                 }
 
