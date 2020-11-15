@@ -235,7 +235,7 @@ namespace UDPSocketProject
                 
                 if (!notifyStopwatch.IsRunning)
                 {
-                    Console.WriteLine("Going into update in NotifyChange");
+                    Console.WriteLine("Going into update in NotifyChange"); 
                     try
                     {
                         IPEndPoint otherServIp = new IPEndPoint(IPAddress.Parse(hosts[personalID % 2]), ports[personalID % 2]);
