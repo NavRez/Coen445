@@ -16,21 +16,17 @@ namespace UDPSocketProject
         }
         public class ClientElements
         {
-            public ClientElements(string name, string host, int port)
+            public ClientElements(string name, string ip)
             {
                 clientName = name;
-                clientHost = host;
-                clientPort = port;
-                ipAdress = clientHost + "." + clientHost.ToString();
+                ipAddress = ip;
             }
 
-            public ClientElements(string name, string host, int port, List<string> subs)
+            public ClientElements(string name, string ip, List<string> subs)
             {
                 clientName = name;
-                clientHost = host;
-                clientPort = port;
+                ipAddress = ip;       
                 clientSubjects = subs;
-                ipAdress = clientHost + "." + clientHost.ToString();
             }
 
             public void resetSubjects(List<string> newSubs)
@@ -38,16 +34,13 @@ namespace UDPSocketProject
                 clientSubjects = newSubs;
             }
 
-            public void changeIP(string newHost, int newPort)
+            public void changeIP(string ip)
             {
-                clientHost = newHost;
-                clientPort = newPort;
-                ipAdress = newHost + "." + newPort.ToString();
+                ipAddress = ip;
             }
 
             public string clientName;
-            public string clientHost;
-            public string ipAdress;
+            public string ipAddress;
             public int clientPort;
             public List<string> clientSubjects = new List<string>();
 
@@ -62,14 +55,13 @@ namespace UDPSocketProject
             string val = array[0];
             string RQ = array[1];
             string Name = array[2];
-            string message;
-
+            string message = null;
+            string ipAddress = null;
             switch (val)
             {
                 case "REGISTER":
-                    string IPaddress1 = array[3];
-                    int Socket1 = Int32.Parse(array[4]);
-                    var User1 = new ClientElements(Name, IPaddress1, Socket1);
+                    ipAddress = array[3];
+                    var User1 = new ClientElements(Name, ipAddress);
                 
                     if (clients.Any(i => i.clientName.Equals(Name)))
                     {
@@ -81,10 +73,9 @@ namespace UDPSocketProject
                     {
                         clients.Add(User1);
                         message = "REGISTERED,";
-                        message += RQ + "," + Name + "," + IPaddress1 + "," + Socket1;    
+                        message += RQ + "," + Name + "," + ipAddress;    
                     }
                     return message;
-                    break;
                 case "DE-REGISTER":
                     
                     if (clients.Any(i => i.clientName.Equals(Name)))
@@ -99,18 +90,16 @@ namespace UDPSocketProject
                         message = "User not registered";
                     }
                     return message;
-                    break;
                 case "UPDATE":
-                    string IPaddress3 = array[3];
-                    int Socket3 = Int32.Parse(array[4]);
-                    
+                    ipAddress = array[3];
+
                     if (clients.Any(i=>i.clientName.Equals(Name)))
                     {
                         var element = clients.Find(obj => obj.clientName.Equals(Name));
-                        element.changeIP(IPaddress3, Socket3);
+                        element.changeIP(ipAddress);
                         clients[clients.FindIndex(obj=>obj.clientName.Equals(Name))] = element;
                          message = "UPDATE-CONFIRMED,";
-                        message += RQ + "," + Name + "," + IPaddress3 + "," + Socket3;
+                        message += RQ + "," + Name + "," + ipAddress;
                     } 
                     else
                     {
@@ -118,122 +107,119 @@ namespace UDPSocketProject
                         message += RQ + "," + Name + "does not exist";
                     }
                     return message;
-                    break;
                 case "PUBLISH":
                     string subj = array[3];
                     string userMessage = array[4];
-                    int counter = 0;
+                    ipAddress = array[5];
+                    bool subjectExists = false;
                     message = String.Format("MESSAGE,{0},{1},{2}", Name, subj, userMessage);
                     foreach (ClientElements element in clients)
                     {
                         if (element.clientSubjects.Contains(subj))
                         {
-                            IPEndPoint clientIP = new IPEndPoint(IPAddress.Parse(element.clientHost), element.clientPort);
+
+                            List<string> ipandPort = element.ipAddress.Split(":").ToList();
+
+                            IPEndPoint clientIP = new IPEndPoint(IPAddress.Parse(ipandPort[0]),
+                                Int32.Parse(ipandPort[1]));
                             byte[] userFeed = Encoding.ASCII.GetBytes(message);
                             socket.Send(userFeed, userFeed.Length, clientIP);
-                            counter++;
-                        }
-                        else
-                        {
-                            continue;
+                            subjectExists = true;
                         }
                     }
 
-                    if (counter == 0) {
-
+                    if (!subjectExists) 
+                    {
                         message = String.Format("PUBLISH-DENIED,{0},{1}, Error, no clients contain such a subject", Name, subj);
                     }
 
                     return message;
-                    break;
                 case "SUBJECTS":
                     if (clients.Any(i => i.clientName.Equals(Name)))
                     {
                         var element = clients.Find(obj => obj.clientName.Equals(Name));
                         element.clientSubjects = new List<string>();
-                        List<string> newSubs = array[3].Split("@").ToList();
+                        List<string> newSubs = array[4].Split("@").ToList();
                         element.clientSubjects = newSubs;
-                        message = String.Format("SUBJECTS-UPDATED,{0},{1},{2}", RQ, Name, array[3]);
+                        message = String.Format("SUBJECTS-UPDATED,{0},{1},{2}", RQ, Name, array[4]);
                     }
                     else
                     {
-                        message = String.Format("SUBJECTS-REJECTED,{0},{1},{2}", RQ, Name, array[3]);
+                        message = String.Format("SUBJECTS-REJECTED,{0},{1},{2}", RQ, Name, array[4]);
                     }
                         
                     return message;
-                    break;
                 default:
                     return null;
-                    break;
             }
 
         }
 
-        public void DromantServerReceive(string incoming)
-        {
-            string[] array = incoming.Split(",");
+        //public void DromantServerReceive(string incoming)
+        //{
+        //    string[] array = incoming.Split(",");
 
-            string val = array[0];
-            string RQ = array[1];
-            string Name = array[2];
-            string message;
+        //    string val = array[0];
+        //    string RQ = array[1];
+        //    string Name = array[2];
+        //    string message;
 
-            switch (val)
-            {
-                case "REGISTERED":
-                    string IPaddress1 = array[3];
-                    int Socket1 = Int32.Parse(array[4]);
-                    var User1 = new ClientElements(Name, IPaddress1, Socket1);
+        //    switch (val)
+        //    {
+        //        case "REGISTERED":
+        //            string IPaddress1 = array[3];
+        //            int Socket1 = Int32.Parse(array[4]);
+        //            var User1 = new ClientElements(Name, IPaddress1, Socket1);
 
-                    clients.Add(User1);
-                    break;
-                case "DE-REGISTERED":
+        //            clients.Add(User1);
+        //            break;
+        //        case "DE-REGISTERED":
 
-                    //de-register
-                    clients.RemoveAll(n => n.clientName.Equals(Name));
-                    message = "DE-REGISTERED,";
-                    message += Name;
-                    break;
-                case "UPDATE-CONFIRMED":
-                    string IPaddress3 = array[3];
-                    int Socket3 = Int32.Parse(array[4]);
+        //            //de-register
+        //            clients.RemoveAll(n => n.clientName.Equals(Name));
+        //            message = "DE-REGISTERED,";
+        //            message += Name;
+        //            break;
+        //        case "UPDATE-CONFIRMED":
+        //            string IPaddress3 = array[3];
+        //            int Socket3 = Int32.Parse(array[4]);
 
-                    var element = clients.Find(obj => obj.clientName.Equals(Name));
-                    element.changeIP(IPaddress3, Socket3);
-                    clients[clients.FindIndex(obj => obj.clientName.Equals(Name))] = element;
-                    message = "UPDATE-CONFIRMED,";
-                    message += RQ + "," + Name + "," + IPaddress3 + "," + Socket3;
-                    
-                    break;
-                case "SUBJECTS-UPDATED":
-                    var element1 = clients.Find(obj => obj.clientName.Equals(Name));
-                    element1.clientSubjects = new List<string>();
-                    List<string> newSubs = array[3].Split("@").ToList();
-                    element1.clientSubjects = newSubs;
-                    message = String.Format("SUBJECTS-UPDATED,{0},{1},{2}", RQ, Name, array[3]);
-                    break;
-                default:
-                    break;
-            }
-        }
+        //            var element = clients.Find(obj => obj.clientName.Equals(Name));
+        //            element.changeIP(IPaddress3, Socket3);
+        //            clients[clients.FindIndex(obj => obj.clientName.Equals(Name))] = element;
+        //            message = "UPDATE-CONFIRMED,";
+        //            message += RQ + "," + Name + "," + IPaddress3 + "," + Socket3;
 
-        public void ChangeServer(UdpClient socket, string changeHost, int changePort)
-        {
-            string message = String.Format("CHANGE-SERVER,{0},{1}", changeHost, changePort);
-            foreach (ClientElements element in clients)
-            {
-                IPEndPoint clientIP = new IPEndPoint(IPAddress.Parse(element.clientHost), element.clientPort);
-                byte[] userFeed = Encoding.ASCII.GetBytes(message);
-                try
-                {
-                    socket.Send(userFeed, userFeed.Length);
-                }
-                catch(InvalidOperationException inv)
-                {
-                    socket.Send(userFeed, userFeed.Length, clientIP);
+        //            break;
+        //        case "SUBJECTS-UPDATED":
+        //            var element1 = clients.Find(obj => obj.clientName.Equals(Name));
+        //            element1.clientSubjects = new List<string>();
+        //            List<string> newSubs = array[3].Split("@").ToList();
+        //            element1.clientSubjects = newSubs;
+        //            message = String.Format("SUBJECTS-UPDATED,{0},{1},{2}", RQ, Name, array[3]);
+        //            break;
+        //        default:
+        //            break;
+        //    }
+        //}
 
-                }
-            }
-        }
+        //public void ChangeServer(UdpClient socket, string changeHost, int changePort)
+        //{
+        //    string message = String.Format("CHANGE-SERVER,{0},{1}", changeHost, changePort);
+        //    foreach (ClientElements element in clients)
+        //    {
+        //        IPEndPoint clientIP = new IPEndPoint(IPAddress.Parse(element.clientHost), element.clientPort);
+        //        byte[] userFeed = Encoding.ASCII.GetBytes(message);
+        //        try
+        //        {
+        //            socket.Send(userFeed, userFeed.Length);
+        //        }
+        //        catch (InvalidOperationException inv)
+        //        {
+        //            socket.Send(userFeed, userFeed.Length, clientIP);
+
+        //        }
+        //    }
+        //}
     }
 }

@@ -10,148 +10,58 @@ namespace UDPSocketProject
         static int v = 0;
         static void Main(string[] args)
         {
+
+
+            Console.WriteLine("Enter Port for this server: ");
+            //string currentPort = Console.ReadLine();
+
+            Console.WriteLine("Enter Port for the other server: ");
+            //string otherPort = Console.ReadLine();
+
+
+            Console.WriteLine("Enter IP for the other server: ");
+            //string otherServerIP = Console.ReadLine();
+
+
+
+            string currentPort = "4444";
+            string otherPort = "3333";
+            string otherServerIP = "127.0.0.2";
+
+            string currentServerIP = "127.0.0.1";
+            int currentPortInt = 0;
+            int OtherPortInt = 0;
+            
             try
             {
-                int val = 8080;
-                UdpServer Server = new UdpServer("127.0.0.2", val);
-                //UdpServer dualServer = new UdpServer("127.0.0.2", 5080);
-                Thread server1 = new Thread(Server.Start);
-                //Thread server2 = new Thread(dualServer.Start);
-
-                server1.Start();
-
-                Thread looping1 = new Thread(() =>
-                {
-                    while (true)
-                    {
-                        Random random = new Random();
-                        int val = random.Next(30000);
-                        Server.NotifyChange(val, "127.0.0.5");
-                    }
-                });
-
-                looping1.Start();
-
+                currentPortInt  =  Int32.Parse(currentPort);
+                OtherPortInt = Int32.Parse(otherPort);
             }
-            catch
+            catch(FormatException)
             {
-                int val = 5080;
-                UdpServer Server2 = new UdpServer("127.0.0.2", val);
-                //UdpServer dualServer = new UdpServer("127.0.0.2", 5080);
-
-                Thread server2 = new Thread(Server2.Start);
-                //Thread server2 = new Thread(dualServer.Start);
-
-                server2.Start();
-
-                Thread seclooping1 = new Thread(() =>
-                {
-                    while (true)
-                    {
-                        Random random = new Random();
-                        int val = random.Next(30000);
-                        val += 30000;
-                        Server2.NotifyChange(val, "127.0.0.5");
-                    }
-                });
-
-                seclooping1.Start();
+                Console.WriteLine("Invalid Port");
+                return;
             }
-            //server2.Start();
-            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            /*
-            Thread thread3 = new Thread(() => {
-                while(true)
-                    try
-                    {
 
-                        byte[] bus = new byte[1024];
-                        var ip = new IPEndPoint(IPAddress.Parse("127.0.0.2"), 5080);
-                        var clienting = new UdpClient(ip);
-                        bus = clienting.Receive(ref ip);
-                        Console.WriteLine("printing : {0}, from {1}", bus.ToString(),1);
-                        clienting.Close();
-                        clienting = null;
+            UdpServer Server = new UdpServer(currentServerIP, otherServerIP, currentPortInt, OtherPortInt);
+            //UdpServer dualServer = new UdpServer("127.0.0.2", 5080);
+            Server.Start();
 
-
-                    }
-                    catch(Exception exc)
-                    {
-                        Console.WriteLine(exc.Message);
-                    }
-
-
-            });
-            Thread thread4 = new Thread(() => {
-                while(true)
-                    try
-                    {
-                        byte[] bus = new byte[1024];
-                        var ip = new IPEndPoint(IPAddress.Parse("127.0.0.2"), 5081);
-                        var clienting = new UdpClient(ip);
-                        bus = clienting.Receive(ref ip);
-                        Console.WriteLine("printing : {0}, from {1}", bus.ToString(), 2);
-                        clienting.Close();
-                        clienting = null;
-                    }
-                    catch (Exception exc)
-                    {
-
-                        Console.WriteLine(exc.Message);
-                    }
-
-
-            });
-            Thread thread5 = new Thread(() => {
-                while(true)
-                    try
-                    {
-
-                        byte[] bus = new byte[1024];
-                        var ip = new IPEndPoint(IPAddress.Parse("127.0.0.2"), 5082);
-                        var clienting = new UdpClient(ip);
-                        bus = clienting.Receive(ref ip);
-                        Console.WriteLine("printing : {0}, from {1}", bus.ToString(), 3);
-                        clienting.Close();
-                        clienting = null;
-                    }
-                    catch (Exception exc)
-                    {
-
-                        Console.WriteLine(exc.Message);
-                    }
-
-
-            });
-            thread3.Start();
-            thread4.Start();
-            thread5.Start();
-            */
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            Thread.Sleep(100);
-            Thread looping = new Thread(() =>
-            {
-                while (true)
-                {
-                    Random random = new Random();
-                    int val = random.Next(30000);
-                    //Server.NotifyChange(val, "127.0.0.5");
-                }
-            });
-            Thread seclooping = new Thread(() =>
-            {
-                while (true)
-                {
-                    Random random = new Random();
-                    int val = random.Next(30000);
-                    val += 30000;
-                    //dualServer.NotifyChange(val, "127.0.0.5");
-                }
-            });
-            //looping.Start();
-            //seclooping.Start();
-
-
+            
         }
+        public static string GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            throw new Exception("No network adapters with an IPv4 address in the system!");
+        }
+
+
     }
 }
