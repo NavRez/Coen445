@@ -10,8 +10,13 @@ namespace UDPSocketProject
         static int v = 0;
         static void Main(string[] args)
         {
-
-
+            Console.WriteLine("Is this server A or server B");
+            string currentServer = Console.ReadLine();
+            while(!(currentServer.Equals("A") || currentServer.Equals("B")))
+            {
+                Console.WriteLine("Invalid argument, Is this server A or server B");
+                currentServer = Console.ReadLine();
+            }
             Console.WriteLine("Enter Port for this server: ");
             //string currentPort = Console.ReadLine();
 
@@ -21,12 +26,24 @@ namespace UDPSocketProject
 
             Console.WriteLine("Enter IP for the other server: ");
             //string otherServerIP = Console.ReadLine();
-
-
-
             string currentPort = "4444";
             string otherPort = "3333";
-            string otherServerIP = "127.0.0.2";
+            string otherServerIP = GetLocalIPAddress();
+
+            if (currentServer.Equals("A"))
+            {
+                currentPort = "4444";
+                otherPort = "3333";
+                otherServerIP = GetLocalIPAddress();
+            }
+            else
+            {
+                currentPort = "3333";
+                otherPort = "4444";
+                otherServerIP = GetLocalIPAddress();
+            }
+
+            
 
             string currentServerIP = "127.0.0.1";
             int currentPortInt = 0;
@@ -43,9 +60,9 @@ namespace UDPSocketProject
                 return;
             }
 
-            UdpServer Server = new UdpServer(currentServerIP, otherServerIP, currentPortInt, OtherPortInt);
+            UdpServer Server = new UdpServer(GetLocalIPAddress(), otherServerIP, currentPortInt, OtherPortInt);
             //UdpServer dualServer = new UdpServer("127.0.0.2", 5080);
-            Server.Start();
+            Server.Start(currentServer);
 
             
         }

@@ -39,7 +39,11 @@ namespace UDPSocketProject
         protected IPEndPoint thisServerIP;//the ip of the server
         protected IPEndPoint otherServerIP;
         protected Socket thisServerSocket;
-        Thread ServerListenThread;
+
+        Thread serverListenThread;
+        Thread serverSwapThread;
+
+        bool sleeping =true;
 
 
         public string[] subjects = { "computer engineering", "Disney Marvel", "Pokemon", "Final Fantasy",
@@ -59,23 +63,41 @@ namespace UDPSocketProject
 
             thisServerSocket = new Socket(thisServerIP.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
             thisServerSocket.Bind(thisServerIP);
-
-
-            //BindSocket(ip);
         }
 
         /// <summary>
         /// The primary execution of the server occurs in this function. The outer loop is blocked by a semaphore to prevent concurrent thread executions and the inner loop is where the server attempts to receive and send data
         /// </summary>
-        public void Start()
+        public void Start(string currentServer)
         {
-            ServerListenThread = new Thread(ServerListen)
+
+
+            Console.WriteLine("Server Started at IP: " + thisServerIP.ToString());
+
+            if (currentServer.Equals("A"))
+            {
+                sleeping = false;
+                Console.WriteLine("I am Serving");
+            }
+            else
+            {
+                Console.WriteLine("I am Sleeping");
+            }
+                serverListenThread = new Thread(ServerListen)
             {
                 IsBackground = true
             };
-            ServerListenThread.Start();
 
-            ServerListenThread.Join();
+            serverSwapThread = new Thread(ServerSwap)
+            {
+                IsBackground = true
+            };
+
+            serverListenThread.Start();
+            serverSwapThread.Start();
+
+            serverListenThread.Join();
+            serverSwapThread.Join();
         }
 
         private void ServerListen()
@@ -83,25 +105,56 @@ namespace UDPSocketProject
             byte[] receiveBytes = new byte[1024];
             IPEndPoint sender = new IPEndPoint(IPAddress.Any, 0);
             EndPoint senderRemote = (EndPoint)sender;
+
             while (true)
             {
                 int bytesLengthReceived = thisServerSocket.ReceiveFrom(receiveBytes, ref senderRemote);
-
                 string receivedMessage = Encoding.ASCII.GetString(receiveBytes, 0,
-                                        bytesLengthReceived)+","+ senderRemote.ToString();
+                        bytesLengthReceived) + "," + senderRemote.ToString();
+                if (!sleeping)
+                {
+                    string[] arr = receivedMessage.Split(",");
 
-                string[] arr = receivedMessage.Split(",");
+                    Console.WriteLine("Server {0} : {1}", thisServerIP, receivedMessage);
+                    string LogMessage = "String " + receivedMessage + " has been received from " + thisServerIP.ToString();
 
-                Console.WriteLine("Server {0} : {1}", thisServerIP, receivedMessage);
-                string LogMessage = "String " + receivedMessage + " has been received from " + thisServerIP.ToString();
+                    string serverResponse = clientTest.SwitchCase(receivedMessage, thisServerSocket);
+                    byte[] feed = Encoding.ASCII.GetBytes(serverResponse);
+                    Console.WriteLine(serverResponse);
 
-                string serverResponse = clientTest.SwitchCase(receivedMessage, thisServerSocket);
-                byte[] feed = Encoding.ASCII.GetBytes(serverResponse);
-                Console.WriteLine(serverResponse);
+                    thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)senderRemote);
 
-                //thisServerSocket.Send(feed, feed.Length, senderRemote);
-                thisServerSocket.SendTo(feed, 0, feed.Length,SocketFlags.None,(IPEndPoint)senderRemote);
+                }                    
+                else
+                {
+                    if(receivedMessage.Equals("Going to swap" + "," + senderRemote.ToString()))
+                    {
+                        Console.WriteLine("I am awake");
+                        sleeping = false;
+                    }
+
+                }
+                
             }
+        }
+
+        private void ServerSwap()
+        {
+            while (true)
+            {                
+                if (!sleeping)
+                {
+                    Thread.Sleep(10000);
+                    Console.WriteLine("Going to swap");
+                    string serverSwapMessage = "Going to swap";
+                    byte[] feed = Encoding.ASCII.GetBytes(serverSwapMessage);
+                    thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, otherServerIP);
+                    sleeping = true;
+                }
+                while (sleeping);
+            }
+            
+            
         }
 
     }
