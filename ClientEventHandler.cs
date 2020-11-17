@@ -48,7 +48,7 @@ namespace UDPSocketProject
 
         public List<ClientElements> clients = new List<ClientElements>();
 
-        public string SwitchCase(string incomingInfo,UdpClient socket)
+        public string SwitchCase(string incomingInfo, Socket socket)
         {
             string[] array = incomingInfo.Split(",");
 
@@ -104,7 +104,7 @@ namespace UDPSocketProject
                     else
                     {
                         message = "UPDATE-DENIED,";
-                        message += RQ + "," + Name + "does not exist";
+                        message += RQ + "," + Name + " does not exist";
                     }
                     return message;
                 case "PUBLISH":
@@ -123,7 +123,7 @@ namespace UDPSocketProject
                             IPEndPoint clientIP = new IPEndPoint(IPAddress.Parse(ipandPort[0]),
                                 Int32.Parse(ipandPort[1]));
                             byte[] userFeed = Encoding.ASCII.GetBytes(message);
-                            socket.Send(userFeed, userFeed.Length, clientIP);
+                            socket.SendTo(userFeed, 0, userFeed.Length,SocketFlags.None, clientIP);
                             subjectExists = true;
                         }
                     }
@@ -131,21 +131,23 @@ namespace UDPSocketProject
                     if (!subjectExists) 
                     {
                         message = String.Format("PUBLISH-DENIED,{0},{1}, Error, no clients contain such a subject", Name, subj);
+                        return message;
                     }
 
                     return message;
                 case "SUBJECTS":
+                    List<string> newSubs = array[3].Split("@").ToList();
                     if (clients.Any(i => i.clientName.Equals(Name)))
                     {
                         var element = clients.Find(obj => obj.clientName.Equals(Name));
                         element.clientSubjects = new List<string>();
-                        List<string> newSubs = array[4].Split("@").ToList();
+                        
                         element.clientSubjects = newSubs;
-                        message = String.Format("SUBJECTS-UPDATED,{0},{1},{2}", RQ, Name, array[4]);
+                        message = String.Format("SUBJECTS-UPDATED,{0},{1},{2}", RQ, Name, array[3]);
                     }
                     else
                     {
-                        message = String.Format("SUBJECTS-REJECTED,{0},{1},{2}", RQ, Name, array[4]);
+                        message = String.Format("SUBJECTS-REJECTED,{0},{1},{2}", RQ, Name, array[3]);
                     }
                         
                     return message;
