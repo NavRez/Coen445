@@ -62,6 +62,7 @@ namespace UDPSocketProject
             }
             else
             {
+                NewServerIP();
                 Console.WriteLine("I am Sleeping");
             }
             serverListenThread = new Thread(ServerListen)
@@ -105,14 +106,24 @@ namespace UDPSocketProject
                 
                 if (!sleeping)
                 {
-                    if(receivedMessage.Length > 1)
+                    if (receivedMessage.Equals("UPDATE-SERVER"+ "," + senderRemote.ToString()))
+                    {
+                        Console.Write("Updating other Server IP From: " + otherServerIP);
+                        otherServerIP = (IPEndPoint)senderRemote;
+                        Console.WriteLine(" To: " + otherServerIP +"... letting clients know");
+
+                    }
+                    
+                    if(receivedMessage.Length > 0)
                     {
                         Console.WriteLine("Server {0} : {1}", thisServerIP, receivedMessage);
 
                         response = messageEventHandler.SwitchCase(receivedMessage, thisServerSocket);
                         byte[] feed = Encoding.ASCII.GetBytes(response.message);
-                        Console.WriteLine(response.message);
-
+                        if(response.message.Length > 0)
+                        {
+                            Console.WriteLine(response.message);
+                        }
                         thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)senderRemote);
                         if (response.valid)
                         {
@@ -129,7 +140,7 @@ namespace UDPSocketProject
                         thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)otherServerIP);
                     }
 
-                    if (otherServerIP.Equals((IPEndPoint)senderRemote))
+                    if (otherServerIP.Equals((IPEndPoint)senderRemote) && receivedMessage.Length > 0)
                     {
                         Console.WriteLine("Server {0} : From that server: {1}", thisServerIP, receivedMessage);
                         receivedMessage += "," + thisServerIP.ToString();
@@ -162,6 +173,13 @@ namespace UDPSocketProject
                 }
                 while (sleeping) ;
             }
+        }
+
+        private void NewServerIP()
+        {
+            string serverSwapMessage = "UPDATE-SERVER";
+            byte[] feed = Encoding.ASCII.GetBytes(serverSwapMessage);
+            thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, otherServerIP);
         }
 
     }
