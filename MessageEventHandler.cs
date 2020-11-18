@@ -7,6 +7,25 @@ using System.Text;
 
 namespace UDPSocketProject
 {
+    public class Response
+    {
+        public string message;
+        public bool valid;
+        public Response()
+        {
+            message = "";
+            valid = false;
+        }
+        public Response(string _message, bool _valid)
+        {
+            message = _message;
+            valid = _valid;
+        }
+            
+            
+    }
+
+
     public class MessageEventHandler
     {
 
@@ -48,14 +67,14 @@ namespace UDPSocketProject
 
         public List<ClientElements> clients = new List<ClientElements>();
 
-        public string SwitchCase(string incomingInfo, Socket socket)
+        public Response SwitchCase(string incomingInfo, Socket socket)
         {
+            Response response = new Response();
             string[] array = incomingInfo.Split(",");
 
             string val = array[0];
             string RQ = null;
             string Name = null;
-            string message = null;
             string ipAddress = null;
             switch (val)
             {
@@ -68,16 +87,17 @@ namespace UDPSocketProject
                     if (clients.Any(i => i.clientName.Equals(Name)))
                     {
                         //Register-Denied
-                        message = "REGISTER-DENIED,";
-                        message += RQ + ",Name is already in use";                  
+                        response.message = "REGISTER-DENIED,";
+                        response.message += RQ + ",Name is already in use";                  
                     }
                     else
                     {
                         clients.Add(User1);
-                        message = "REGISTERED,";
-                        message += RQ + "," + Name + "," + ipAddress;    
+                        response.message = "REGISTERED,";
+                        response.message += RQ + "," + Name + "," + ipAddress;
+                        response.valid = true;
                     }
-                    return message;
+                    return response;
                 case "DE-REGISTER":
                     RQ = array[1];
                     Name = array[2];
@@ -85,14 +105,15 @@ namespace UDPSocketProject
                     {
                         //de-register
                         clients.RemoveAll(n => n.clientName.Equals(Name));
-                        message = "DE-REGISTERED,";
-                        message += Name;    
+                        response.message = "DE-REGISTERED,";
+                        response.message += Name;
+                        response.valid = true;
                     } 
                     else
                     {
-                        message = "User not registered";
+                        response.message = "User not registered";
                     }
-                    return message;
+                    return response;
                 case "UPDATE":
                     RQ = array[1];
                     Name = array[2];
@@ -103,15 +124,16 @@ namespace UDPSocketProject
                         var element = clients.Find(obj => obj.clientName.Equals(Name));
                         element.changeIP(ipAddress);
                         clients[clients.FindIndex(obj=>obj.clientName.Equals(Name))] = element;
-                        message = "UPDATE-CONFIRMED,";
-                        message += RQ + "," + Name + "," + ipAddress;
+                        response.message = "UPDATE-CONFIRMED,";
+                        response.message += RQ + "," + Name + "," + ipAddress;
+                        response.valid = true;
                     } 
                     else
                     {
-                        message = "UPDATE-DENIED,";
-                        message += RQ + "," + Name + " does not exist";
+                        response.message = "UPDATE-DENIED,";
+                        response.message += RQ + "," + Name + " does not exist";
                     }
-                    return message;
+                    return response;
                 case "PUBLISH":
                     RQ = array[1];
                     Name = array[2];
@@ -119,7 +141,7 @@ namespace UDPSocketProject
                     string userMessage = array[4];
                     ipAddress = array[5];
                     bool subjectInterest = false;
-                    message = String.Format("MESSAGE,{0},{1},{2}", Name, subj, userMessage);
+                    response.message = String.Format("MESSAGE,{0},{1},{2}", Name, subj, userMessage);
                     foreach (ClientElements element in clients)
                     {
                         if (element.clientSubjects.Contains(subj))
@@ -129,7 +151,7 @@ namespace UDPSocketProject
 
                             IPEndPoint clientIP = new IPEndPoint(IPAddress.Parse(ipandPort[0]),
                                 Int32.Parse(ipandPort[1]));
-                            byte[] userFeed = Encoding.ASCII.GetBytes(message);
+                            byte[] userFeed = Encoding.ASCII.GetBytes(response.message);
                             socket.SendTo(userFeed, 0, userFeed.Length,SocketFlags.None, clientIP);
                             subjectInterest = true;
                         }
@@ -137,10 +159,11 @@ namespace UDPSocketProject
 
                     if (!subjectInterest) 
                     {
-                        message = String.Format("PUBLISH-DENIED,{0},{1}, Error, no clients contain such a subject", Name, subj);
-                        return message;
+                        response.message = String.Format("PUBLISH-DENIED,{0},{1}, Error, no clients contain such a subject", Name, subj);
+                        return response;
                     }
-                    return "";
+                    response.message = "";
+                    return response;
 
                 case "SUBJECTS":
                     RQ = array[1];
@@ -152,15 +175,16 @@ namespace UDPSocketProject
                         element.clientSubjects = new List<string>();
                         
                         element.clientSubjects = newSubs;
-                        message = String.Format("SUBJECTS-UPDATED,{0},{1},{2}", RQ, Name, array[3]);
+                        response.message = String.Format("SUBJECTS-UPDATED,{0},{1},{2}", RQ, Name, array[3]);
+                        response.valid = true;
                     }
                     else
                     {
-                        message = String.Format("SUBJECTS-REJECTED,{0},{1},{2}", RQ, Name, array[3]);
+                        response.message = String.Format("SUBJECTS-REJECTED,{0},{1},{2}", RQ, Name, array[3]);
                     }                        
-                    return message;
+                    return response;
                 case "WAKE-UP":
-                    string thisServerIP = array[1];
+                    string thisServerIP = array[2];
                     foreach (ClientElements element in clients)
                     {
                         List<string> ipandPort = element.ipAddress.Split(":").ToList();
@@ -170,10 +194,11 @@ namespace UDPSocketProject
                         byte[] userFeed = Encoding.ASCII.GetBytes("CHANGE-SERVER,"+thisServerIP);
                         socket.SendTo(userFeed, 0, userFeed.Length, SocketFlags.None, clientIP);
                     }
-                    return "";
+                    response.message = "Told Clients come to my server";
+                    return response;
 
                 default:
-                    return null;
+                    return response;
             }
         }
     }
