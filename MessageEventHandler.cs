@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -25,47 +26,80 @@ namespace UDPSocketProject
             
     }
 
+    public class ClientElements
+    {
+
+        public string clientName;
+        public string ipAddress;
+        public int clientPort;
+        public List<string> clientSubjects = new List<string>();
+
+        public ClientElements(string name, string ip)
+        {
+            clientName = name;
+            ipAddress = ip;
+        }
+
+        public ClientElements(string name, string ip, List<string> subs)
+        {
+            clientName = name;
+            ipAddress = ip;
+            clientSubjects = subs;
+        }
+
+        public void resetSubjects(List<string> newSubs)
+        {
+            clientSubjects = newSubs;
+        }
+
+        public void changeIP(string ip)
+        {
+            ipAddress = ip;
+        }
+
+    }
 
     public class MessageEventHandler
     {
 
+        public List<ClientElements> clients = new List<ClientElements>();
+        public string filePathA = "ServerA.txt";
+        public string filePathB = "ServerB.txt";
+
         public MessageEventHandler() 
         {
-            ; 
+            
         }
-        public class ClientElements
+
+        private void writetoFile(List<ClientElements> clientsInfo)
         {
-            public ClientElements(string name, string ip)
+            if (Program.currentServer.Equals("A"))
             {
-                clientName = name;
-                ipAddress = ip;
+                if (!File.Exists(filePathA))
+                {
+                    using StreamWriter sw = File.CreateText(filePathA);
+                    sw.WriteLine(clientsInfo.ToString());
+                }
+                else
+                {
+                    using StreamWriter sw = File.CreateText(filePathA);
+                    sw.WriteLine(clientsInfo.ToString());
+                }
             }
-
-            public ClientElements(string name, string ip, List<string> subs)
+            else
             {
-                clientName = name;
-                ipAddress = ip;       
-                clientSubjects = subs;
+                if (!File.Exists(filePathB))
+                {
+                    using StreamWriter sw = File.CreateText(filePathB);
+                    sw.WriteLine(clientsInfo.ToString());
+                }
+                else
+                {
+                    using StreamWriter sw = File.CreateText(filePathB);
+                    sw.WriteLine(clientsInfo.ToString());
+                }
             }
-
-            public void resetSubjects(List<string> newSubs)
-            {
-                clientSubjects = newSubs;
-            }
-
-            public void changeIP(string ip)
-            {
-                ipAddress = ip;
-            }
-
-            public string clientName;
-            public string ipAddress;
-            public int clientPort;
-            public List<string> clientSubjects = new List<string>();
-
-        }
-
-        public List<ClientElements> clients = new List<ClientElements>();
+        }       
 
         public Response SwitchCase(string incomingInfo, Socket socket)
         {
@@ -88,7 +122,8 @@ namespace UDPSocketProject
                     {
                         //Register-Denied
                         response.message = "REGISTER-DENIED,";
-                        response.message += RQ + ",Name is already in use";                  
+                        response.message += RQ + ",Name is already in use";
+
                     }
                     else
                     {
@@ -96,6 +131,8 @@ namespace UDPSocketProject
                         response.message = "REGISTERED,";
                         response.message += RQ + "," + Name + "," + ipAddress;
                         response.valid = true;
+                        writetoFile(clients);
+
                     }
                     return response;
                 case "DE-REGISTER":
@@ -185,6 +222,7 @@ namespace UDPSocketProject
                     return response;
                 case "WAKE-UP":
                     string thisServerIP = array[2];
+                    UdpServer.sleeping = false;
                     foreach (ClientElements element in clients)
                     {
                         List<string> ipandPort = element.ipAddress.Split(":").ToList();
@@ -194,9 +232,12 @@ namespace UDPSocketProject
                         byte[] userFeed = Encoding.ASCII.GetBytes("CHANGE-SERVER,"+thisServerIP);
                         socket.SendTo(userFeed, 0, userFeed.Length, SocketFlags.None, clientIP);
                     }
-                    response.message = "Told Clients come to my server";
+                    Console.WriteLine("I'M AWAKE, told clients to come to my server");
                     return response;
-
+                case "GO-SLEEP":
+                    UdpServer.sleeping = true;
+                    Console.WriteLine("And now I sleep... zzz");
+                    return response;
                 default:
                     return response;
             }

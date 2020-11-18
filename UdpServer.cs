@@ -37,9 +37,9 @@ namespace UDPSocketProject
         /// </summary>
         /// <param name="newPort">the port assigned to a new UdpServer </param>
         /// <param name="newHost">host assinged to a new Udp Server</param>
-        public UdpServer(string _bindingIP,string _otherServerIP, int _thisServerPort, int _otherServerPort)
+        public UdpServer(string _bindingIP, string _otherServerIP, int _thisServerPort, int _otherServerPort)
         {
-            thisServerIP = new IPEndPoint(IPAddress.Parse(_bindingIP),_thisServerPort);
+            thisServerIP = new IPEndPoint(IPAddress.Parse(_bindingIP), _thisServerPort);
             otherServerIP = new IPEndPoint(IPAddress.Parse(_otherServerIP), _otherServerPort);
 
             thisServerSocket = new Socket(thisServerIP.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
@@ -64,7 +64,7 @@ namespace UDPSocketProject
             {
                 Console.WriteLine("I am Sleeping");
             }
-                serverListenThread = new Thread(ServerListen)
+            serverListenThread = new Thread(ServerListen)
             {
                 IsBackground = true
             };
@@ -89,35 +89,44 @@ namespace UDPSocketProject
 
             while (true)
             {
+                int bytesLengthReceived = 0;
+                string receivedMessage = "";
 
-                int bytesLengthReceived = thisServerSocket.ReceiveFrom(receiveBytes, ref senderRemote);
-                string receivedMessage = Encoding.ASCII.GetString(receiveBytes, 0,
-                        bytesLengthReceived) + "," + senderRemote.ToString();
+                try
+                {
+                    bytesLengthReceived = thisServerSocket.ReceiveFrom(receiveBytes, ref senderRemote);
+                    receivedMessage = Encoding.ASCII.GetString(receiveBytes, 0,
+                            bytesLengthReceived) + "," + senderRemote.ToString();
+                }
+                catch
+                {
+                    Console.WriteLine("Other server is not responding, I am the only server");
+                }
+                
                 if (!sleeping)
                 {
-                    string[] arr = receivedMessage.Split(",");
-
-                    Console.WriteLine("Server {0} : {1}", thisServerIP, receivedMessage);
-                    string LogMessage = "String " + receivedMessage + " has been received from " + thisServerIP.ToString();
-
-                    response = messageEventHandler.SwitchCase(receivedMessage, thisServerSocket);
-                    byte[] feed = Encoding.ASCII.GetBytes(response.message);
-                    Console.WriteLine(response.message);
-
-                    thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)senderRemote);
-                    if (response.valid)
+                    if(receivedMessage.Length > 1)
                     {
-                        feed = Encoding.ASCII.GetBytes(receivedMessage + ",");
-                        thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)otherServerIP);
-                    }
+                        Console.WriteLine("Server {0} : {1}", thisServerIP, receivedMessage);
 
-                }                    
+                        response = messageEventHandler.SwitchCase(receivedMessage, thisServerSocket);
+                        byte[] feed = Encoding.ASCII.GetBytes(response.message);
+                        Console.WriteLine(response.message);
+
+                        thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)senderRemote);
+                        if (response.valid)
+                        {
+                            feed = Encoding.ASCII.GetBytes(receivedMessage + ",");
+                            thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)otherServerIP);
+                        }
+                    }                   
+                }
                 else
                 {
                     if (receivedMessage.Equals("WAKE-UP" + "," + senderRemote.ToString()))
                     {
-                        Console.WriteLine("I AM AWAKE");
-                        sleeping = false;
+                        byte[] feed = Encoding.ASCII.GetBytes("GO-SLEEP");
+                        thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)otherServerIP);
                     }
 
                     if (otherServerIP.Equals((IPEndPoint)senderRemote))
@@ -125,13 +134,17 @@ namespace UDPSocketProject
                         Console.WriteLine("Server {0} : From that server: {1}", thisServerIP, receivedMessage);
                         receivedMessage += "," + thisServerIP.ToString();
                         response = messageEventHandler.SwitchCase(receivedMessage, thisServerSocket);
-                        Console.WriteLine("Cause of other server: " + response.message);
+                        if (response.message.Length > 0)
+                        {
+                            Console.WriteLine("From other server: " + response.message);
+                        }
+
                     }
 
 
 
                 }
-                
+
             }
         }
 
@@ -146,8 +159,6 @@ namespace UDPSocketProject
                     string serverSwapMessage = "WAKE-UP";
                     byte[] feed = Encoding.ASCII.GetBytes(serverSwapMessage);
                     thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, otherServerIP);
-                    sleeping = true;
-                    Console.WriteLine("And now I rest...zzz");
                 }
                 while (sleeping) ;
             }
