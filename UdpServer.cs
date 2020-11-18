@@ -23,7 +23,8 @@ namespace UDPSocketProject
         Thread serverListenThread;
         Thread serverSwapThread;
 
-        bool sleeping = true;
+        public static bool sleeping = true;
+        Response response = new Response();
 
 
         public string[] subjects = { "computer engineering", "Disney Marvel", "Pokemon", "Final Fantasy",
@@ -99,21 +100,35 @@ namespace UDPSocketProject
                     Console.WriteLine("Server {0} : {1}", thisServerIP, receivedMessage);
                     string LogMessage = "String " + receivedMessage + " has been received from " + thisServerIP.ToString();
 
-                    string serverResponse = messageEventHandler.SwitchCase(receivedMessage, thisServerSocket);
-                    byte[] feed = Encoding.ASCII.GetBytes(serverResponse);
-                    Console.WriteLine(serverResponse);
+                    response = messageEventHandler.SwitchCase(receivedMessage, thisServerSocket);
+                    byte[] feed = Encoding.ASCII.GetBytes(response.message);
+                    Console.WriteLine(response.message);
 
                     thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)senderRemote);
+                    if (response.valid)
+                    {
+                        feed = Encoding.ASCII.GetBytes(receivedMessage + ",");
+                        thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)otherServerIP);
+                    }
 
                 }                    
                 else
                 {
-                    if(receivedMessage.Equals("WAKE-UP" + "," + senderRemote.ToString()))
+                    if (receivedMessage.Equals("WAKE-UP" + "," + senderRemote.ToString()))
                     {
-                        string serverResponse = messageEventHandler.SwitchCase(receivedMessage, thisServerSocket);
                         Console.WriteLine("I AM AWAKE");
                         sleeping = false;
                     }
+
+                    if (otherServerIP.Equals((IPEndPoint)senderRemote))
+                    {
+                        Console.WriteLine("Server {0} : From that server: {1}", thisServerIP, receivedMessage);
+                        receivedMessage += "," + thisServerIP.ToString();
+                        response = messageEventHandler.SwitchCase(receivedMessage, thisServerSocket);
+                        Console.WriteLine("Cause of other server: " + response.message);
+                    }
+
+
 
                 }
                 
@@ -127,7 +142,7 @@ namespace UDPSocketProject
                 if (!sleeping)
                 {
                     Thread.Sleep(10000);
-                    Console.WriteLine("Sendign wake up");
+                    Console.WriteLine("Sending wake up");
                     string serverSwapMessage = "WAKE-UP";
                     byte[] feed = Encoding.ASCII.GetBytes(serverSwapMessage);
                     thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, otherServerIP);
