@@ -7,7 +7,6 @@ namespace UDPSocketProject
 {
     class Program
     {
-        static int v = 0;
         static void Main(string[] args)
         {
             Console.WriteLine("Is this server A or server B");

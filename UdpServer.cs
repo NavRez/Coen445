@@ -14,7 +14,7 @@ namespace UDPSocketProject
     class UdpServer
     {
 
-        public ClientEventHandler clientTest = new ClientEventHandler();
+        public MessageEventHandler messageEventHandler = new MessageEventHandler();
 
         //these attributes are unique to each server
         //protected UdpClient serverSocket;//protected socket element
@@ -43,7 +43,7 @@ namespace UDPSocketProject
         Thread serverListenThread;
         Thread serverSwapThread;
 
-        bool sleeping =true;
+        bool sleeping = true;
 
 
         public string[] subjects = { "computer engineering", "Disney Marvel", "Pokemon", "Final Fantasy",
@@ -108,6 +108,7 @@ namespace UDPSocketProject
 
             while (true)
             {
+
                 int bytesLengthReceived = thisServerSocket.ReceiveFrom(receiveBytes, ref senderRemote);
                 string receivedMessage = Encoding.ASCII.GetString(receiveBytes, 0,
                         bytesLengthReceived) + "," + senderRemote.ToString();
@@ -118,7 +119,7 @@ namespace UDPSocketProject
                     Console.WriteLine("Server {0} : {1}", thisServerIP, receivedMessage);
                     string LogMessage = "String " + receivedMessage + " has been received from " + thisServerIP.ToString();
 
-                    string serverResponse = clientTest.SwitchCase(receivedMessage, thisServerSocket);
+                    string serverResponse = messageEventHandler.SwitchCase(receivedMessage, thisServerSocket);
                     byte[] feed = Encoding.ASCII.GetBytes(serverResponse);
                     Console.WriteLine(serverResponse);
 
@@ -127,9 +128,10 @@ namespace UDPSocketProject
                 }                    
                 else
                 {
-                    if(receivedMessage.Equals("Going to swap" + "," + senderRemote.ToString()))
+                    if(receivedMessage.Equals("WAKE-UP" + "," + senderRemote.ToString()))
                     {
-                        Console.WriteLine("I am awake");
+                        string serverResponse = messageEventHandler.SwitchCase(receivedMessage, thisServerSocket);
+                        Console.WriteLine("I AM AWAKE");
                         sleeping = false;
                     }
 
@@ -141,20 +143,19 @@ namespace UDPSocketProject
         private void ServerSwap()
         {
             while (true)
-            {                
+            {
                 if (!sleeping)
                 {
                     Thread.Sleep(10000);
-                    Console.WriteLine("Going to swap");
-                    string serverSwapMessage = "Going to swap";
+                    Console.WriteLine("Sendign wake up");
+                    string serverSwapMessage = "WAKE-UP";
                     byte[] feed = Encoding.ASCII.GetBytes(serverSwapMessage);
                     thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, otherServerIP);
                     sleeping = true;
+                    Console.WriteLine("And now I rest...zzz");
                 }
-                while (sleeping);
+                while (sleeping) ;
             }
-            
-            
         }
 
     }

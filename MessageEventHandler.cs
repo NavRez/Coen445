@@ -7,10 +7,10 @@ using System.Text;
 
 namespace UDPSocketProject
 {
-    public class ClientEventHandler
+    public class MessageEventHandler
     {
 
-        public ClientEventHandler() 
+        public MessageEventHandler() 
         {
             ; 
         }
@@ -53,13 +53,15 @@ namespace UDPSocketProject
             string[] array = incomingInfo.Split(",");
 
             string val = array[0];
-            string RQ = array[1];
-            string Name = array[2];
+            string RQ = null;
+            string Name = null;
             string message = null;
             string ipAddress = null;
             switch (val)
             {
                 case "REGISTER":
+                    RQ = array[1];
+                    Name = array[2];
                     ipAddress = array[3];
                     var User1 = new ClientElements(Name, ipAddress);
                 
@@ -77,7 +79,8 @@ namespace UDPSocketProject
                     }
                     return message;
                 case "DE-REGISTER":
-                    
+                    RQ = array[1];
+                    Name = array[2];
                     if (clients.Any(i => i.clientName.Equals(Name)))
                     {
                         //de-register
@@ -91,6 +94,8 @@ namespace UDPSocketProject
                     }
                     return message;
                 case "UPDATE":
+                    RQ = array[1];
+                    Name = array[2];
                     ipAddress = array[3];
 
                     if (clients.Any(i=>i.clientName.Equals(Name)))
@@ -98,7 +103,7 @@ namespace UDPSocketProject
                         var element = clients.Find(obj => obj.clientName.Equals(Name));
                         element.changeIP(ipAddress);
                         clients[clients.FindIndex(obj=>obj.clientName.Equals(Name))] = element;
-                         message = "UPDATE-CONFIRMED,";
+                        message = "UPDATE-CONFIRMED,";
                         message += RQ + "," + Name + "," + ipAddress;
                     } 
                     else
@@ -108,6 +113,8 @@ namespace UDPSocketProject
                     }
                     return message;
                 case "PUBLISH":
+                    RQ = array[1];
+                    Name = array[2];
                     string subj = array[3];
                     string userMessage = array[4];
                     ipAddress = array[5];
@@ -133,9 +140,11 @@ namespace UDPSocketProject
                         message = String.Format("PUBLISH-DENIED,{0},{1}, Error, no clients contain such a subject", Name, subj);
                         return message;
                     }
-
                     return "";
+
                 case "SUBJECTS":
+                    RQ = array[1];
+                    Name = array[2];
                     List<string> newSubs = array[3].Split("@").ToList();
                     if (clients.Any(i => i.clientName.Equals(Name)))
                     {
@@ -148,9 +157,21 @@ namespace UDPSocketProject
                     else
                     {
                         message = String.Format("SUBJECTS-REJECTED,{0},{1},{2}", RQ, Name, array[3]);
-                    }
-                        
+                    }                        
                     return message;
+                case "WAKE-UP":
+                    string thisServerIP = array[1];
+                    foreach (ClientElements element in clients)
+                    {
+                        List<string> ipandPort = element.ipAddress.Split(":").ToList();
+                        IPEndPoint clientIP = new IPEndPoint(IPAddress.Parse(ipandPort[0]),
+                            Int32.Parse(ipandPort[1]));
+
+                        byte[] userFeed = Encoding.ASCII.GetBytes("CHANGE-SERVER,"+thisServerIP);
+                        socket.SendTo(userFeed, 0, userFeed.Length, SocketFlags.None, clientIP);
+                    }
+                    return "";
+
                 default:
                     return null;
             }
