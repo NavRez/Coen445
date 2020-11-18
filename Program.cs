@@ -7,10 +7,11 @@ namespace UDPSocketProject
 {
     class Program
     {
+        public static string currentServer;
         static void Main(string[] args)
         {
             Console.WriteLine("Is this server A or server B");
-            string currentServer = Console.ReadLine();
+            currentServer = Console.ReadLine();
             while(!(currentServer.Equals("A") || currentServer.Equals("B")))
             {
                 Console.WriteLine("Invalid argument, Is this server A or server B");
