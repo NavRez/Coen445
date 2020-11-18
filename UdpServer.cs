@@ -16,26 +16,6 @@ namespace UDPSocketProject
 
         public MessageEventHandler messageEventHandler = new MessageEventHandler();
 
-        //these attributes are unique to each server
-        //protected UdpClient serverSocket;//protected socket element
-        //protected IPEndPoint ip;//the ip of the server
-        //protected byte[] data;//the databus of the server
-        //protected static int initServer = 0;//a static element that is incremented the moment a server is initalized
-        //protected int personalID = 0;//
-        //protected Stopwatch stopwatch = new Stopwatch();
-        //protected Stopwatch notifyStopwatch = new Stopwatch();
-        
-        //public static bool allowReceive = true;
-
-        ////shared information between servers
-        //protected static int[] ports = { 8080, 5080 };//retains the ports of the servers
-        //protected static string[] hosts = { "127.0.0.2", "127.0.0.2" };//retains the hosts of the servers
-        //public static Semaphore semaphore = new Semaphore(1, 1, "Originate");
-        //public Semaphore internalSemaphore = new Semaphore(1, 1);
-        //public bool running = false;
-
-
-
         protected IPEndPoint thisServerIP;//the ip of the server
         protected IPEndPoint otherServerIP;
         protected Socket thisServerSocket;
