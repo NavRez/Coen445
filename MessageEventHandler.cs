@@ -123,6 +123,7 @@ namespace UDPSocketProject
                         //Register-Denied
                         response.message = "REGISTER-DENIED,";
                         response.message += RQ + ",Name is already in use";
+                        response.valid = false;
 
                     }
                     else
@@ -148,6 +149,7 @@ namespace UDPSocketProject
                     } 
                     else
                     {
+                        response.valid = false;
                         response.message = "User not registered";
                     }
                     return response;
@@ -169,6 +171,7 @@ namespace UDPSocketProject
                     {
                         response.message = "UPDATE-DENIED,";
                         response.message += RQ + "," + Name + " does not exist";
+                        response.valid = false;
                     }
                     return response;
                 case "PUBLISH":
@@ -200,6 +203,7 @@ namespace UDPSocketProject
                         return response;
                     }
                     response.message = "";
+                    response.valid = false;
                     return response;
 
                 case "SUBJECTS":
@@ -218,26 +222,46 @@ namespace UDPSocketProject
                     else
                     {
                         response.message = String.Format("SUBJECTS-REJECTED,{0},{1},{2}", RQ, Name, array[3]);
+                        response.valid = false;
                     }                        
                     return response;
                 case "WAKE-UP":
-                    string thisServerIP = array[2];
-                    UdpServer.sleeping = false;
+                    if (UdpServer.sleeping)
+                    {
+                        string thisServerIP = array[2];
+                        UdpServer.sleeping = false;
+                        foreach (ClientElements element in clients)
+                        {
+                            List<string> ipandPort = element.ipAddress.Split(":").ToList();
+                            IPEndPoint clientIP = new IPEndPoint(IPAddress.Parse(ipandPort[0]),
+                                Int32.Parse(ipandPort[1]));
+
+                            byte[] userFeed = Encoding.ASCII.GetBytes("CHANGE-SERVER," + thisServerIP);
+                            socket.SendTo(userFeed, 0, userFeed.Length, SocketFlags.None, clientIP);
+                        }
+                        Console.WriteLine("\nI'M AWAKE\nTelling other server to sleep.");
+                        response.valid = false;                        
+                    }                   
+                    return response;
+                case "GO-SLEEP":
+                    Console.WriteLine("\nI'M ASLEEP\nI was told to go sleep, And now I sleep...zzz");
+                    UdpServer.sleeping = true;
+                    response.valid = false;
+                    return response;
+                case "UPDATE-SERVER":
+
+                    string otherServerIP = array[1];
                     foreach (ClientElements element in clients)
                     {
                         List<string> ipandPort = element.ipAddress.Split(":").ToList();
                         IPEndPoint clientIP = new IPEndPoint(IPAddress.Parse(ipandPort[0]),
                             Int32.Parse(ipandPort[1]));
 
-                        byte[] userFeed = Encoding.ASCII.GetBytes("CHANGE-SERVER,"+thisServerIP);
+                        byte[] userFeed = Encoding.ASCII.GetBytes("UPDATE-SERVER," + otherServerIP);
                         socket.SendTo(userFeed, 0, userFeed.Length, SocketFlags.None, clientIP);
                     }
-                    Console.WriteLine("I'M AWAKE, told clients to come to my server");
                     return response;
-                case "GO-SLEEP":
-                    UdpServer.sleeping = true;
-                    Console.WriteLine("And now I sleep... zzz");
-                    return response;
+
                 default:
                     return response;
             }
