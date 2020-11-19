@@ -10,6 +10,10 @@ namespace UDPSocketProject
         public static string currentServer;
         static void Main(string[] args)
         {
+
+            string currentPort = "";
+            string otherServerIP = "";
+            string otherPort = "";
             Console.WriteLine("Is this server A or server B");
             currentServer = Console.ReadLine();
             while(!(currentServer.Equals("A") || currentServer.Equals("B")))
@@ -17,18 +21,7 @@ namespace UDPSocketProject
                 Console.WriteLine("Invalid argument, Is this server A or server B");
                 currentServer = Console.ReadLine();
             }
-            Console.WriteLine("Enter Port for this server: ");
-            //string currentPort = Console.ReadLine();
 
-            Console.WriteLine("Enter Port for the other server: ");
-            //string otherPort = Console.ReadLine();
-
-
-            Console.WriteLine("Enter IP for the other server: ");
-            //string otherServerIP = Console.ReadLine();
-            string currentPort = "4444";
-            string otherPort = "3333";
-            string otherServerIP = GetLocalIPAddress();
 
             if (currentServer.Equals("A"))
             {
@@ -43,16 +36,28 @@ namespace UDPSocketProject
                 otherServerIP = GetLocalIPAddress();
             }
 
-            
 
-            string currentServerIP = "127.0.0.1";
-            int currentPortInt = 0;
-            int OtherPortInt = 0;
-            
+
+            Console.WriteLine("Enter Port for this server: ");
+            //currentPort = Console.ReadLine();
+
+
+            Console.WriteLine("Server " + currentServer + " IP address: "
+                + GetLocalIPAddress() + ":" + currentPort);
+
+            Console.WriteLine("Enter IP (no port) for the other server: ");
+            //otherServerIP = Console.ReadLine();
+
+            Console.WriteLine("Enter Port for the other server: ");
+            //otherPort = Console.ReadLine();
+
+
+            int currentPortInt;
+            int otherPortInt;
             try
             {
-                currentPortInt  =  Int32.Parse(currentPort);
-                OtherPortInt = Int32.Parse(otherPort);
+                currentPortInt = int.Parse(currentPort);
+                otherPortInt = int.Parse(otherPort);
             }
             catch(FormatException)
             {
@@ -60,8 +65,7 @@ namespace UDPSocketProject
                 return;
             }
 
-            UdpServer Server = new UdpServer(GetLocalIPAddress(), otherServerIP, currentPortInt, OtherPortInt);
-            //UdpServer dualServer = new UdpServer("127.0.0.2", 5080);
+            UdpServer Server = new UdpServer(GetLocalIPAddress(), otherServerIP, currentPortInt, otherPortInt);
             Server.Start(currentServer);
 
             
@@ -78,6 +82,8 @@ namespace UDPSocketProject
             }
             throw new Exception("No network adapters with an IPv4 address in the system!");
         }
+
+
 
 
     }
