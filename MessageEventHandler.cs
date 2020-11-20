@@ -21,9 +21,7 @@ namespace UDPSocketProject
         {
             message = _message;
             valid = _valid;
-        }
-            
-            
+        }        
     }
 
     public class ClientElements
@@ -57,47 +55,145 @@ namespace UDPSocketProject
             ipAddress = ip;
         }
 
+        public string printSubjects()
+        {
+            string allSubjects = "";
+            foreach(string subject in clientSubjects)
+            {
+                allSubjects += "@" + subject;
+            }
+
+
+            return allSubjects;
+        }
+
     }
 
     public class MessageEventHandler
     {
 
         public List<ClientElements> clients = new List<ClientElements>();
-        public string filePathA = "ServerA.txt";
-        public string filePathB = "ServerB.txt";
-
+        public string filePathA = Path.Combine(Environment.CurrentDirectory, "ServerA.txt");
+        public string filePathB = Path.Combine(Environment.CurrentDirectory, "ServerB.txt");
+        public string currentFile = Path.Combine(Environment.CurrentDirectory, "ServerA.txt");
+        public string otherFile = Path.Combine(Environment.CurrentDirectory, "ServerB.txt");
         public MessageEventHandler() 
         {
-            
-        }
+            if (!File.Exists(filePathA))
+            {
+                File.Create(filePathA);
+            }
+            if (!File.Exists(filePathB))
+            {
+                File.Create(filePathB);
+            }
 
-        private void writetoFile(List<ClientElements> clientsInfo)
-        {
             if (Program.currentServer.Equals("A"))
             {
-                if (!File.Exists(filePathA))
-                {
-                    using StreamWriter sw = File.CreateText(filePathA);
-                    sw.WriteLine(clientsInfo.ToString());
-                }
-                else
-                {
-                    using StreamWriter sw = File.CreateText(filePathA);
-                    sw.WriteLine(clientsInfo.ToString());
-                }
+                currentFile = filePathA;
+                otherFile = filePathB;
             }
             else
             {
-                if (!File.Exists(filePathB))
+                currentFile = filePathB;
+                otherFile = filePathA;
+            }
+            CheckEqualFiles();
+
+            
+        }
+
+        public void CheckEqualFiles()
+        {
+            if (UdpServer.twoServerComm)
+            {
+                string[] currentLines = File.ReadAllLines(currentFile);
+                string[] otherLines = File.ReadAllLines(otherFile);
+
+                if (currentLines.Length != otherLines.Length)
                 {
-                    using StreamWriter sw = File.CreateText(filePathB);
-                    sw.WriteLine(clientsInfo.ToString());
+                    File.WriteAllLines(currentFile, otherLines);
                 }
                 else
                 {
-                    using StreamWriter sw = File.CreateText(filePathB);
-                    sw.WriteLine(clientsInfo.ToString());
+                    if (!currentLines.SequenceEqual(otherLines))
+                    {
+                        File.WriteAllLines(currentFile, otherLines);
+                    }
                 }
+            }
+        }
+
+        public void ReadFromFile()
+        {       
+            if (File.Exists(currentFile))
+            {
+                string[] lines = File.ReadAllLines(currentFile);
+                foreach (var line in lines)
+                {
+                    List<string> clientElements = line.Split(",").ToList();
+                    List<string> clientSubjects = clientElements[2].Split("@").ToList();
+                    ClientElements client = new ClientElements(clientElements[0], clientElements[1], clientSubjects);
+                    clients.Add(client);
+
+                    Console.WriteLine("Added client: " + clientElements[0] + clientElements[1] + client.printSubjects());
+                }
+            }
+        }
+
+        private void UpdateSubjects(string clientName,string newSubs)
+        {
+            if (File.Exists(currentFile))
+            {
+                string[] lines = File.ReadAllLines(currentFile);
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    List<string> clientElements = lines[i].Split(",").ToList();
+                    if (clientElements[0].Equals(clientName))
+                    {
+                        lines[i] = clientElements[0] + "," + clientElements[1] + "," + newSubs;
+                    }
+                }
+                File.WriteAllLines(currentFile, lines);
+            }
+        }
+
+        private void UpdateIP(string clientName, string newIP)
+        {
+            if (File.Exists(currentFile))
+            {
+                string[] lines = File.ReadAllLines(currentFile);
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    List<string> clientElements = lines[i].Split(",").ToList();
+                    if (clientElements[0].Equals(clientName))
+                    {
+                        lines[i] = clientElements[0] + "," + newIP + "," + clientElements[2];
+                    }
+                }
+                File.WriteAllLines(currentFile, lines);
+            }
+        }
+
+        private void WriteToFile(List<ClientElements> clientsInfo)
+        {           
+            if (!File.Exists(currentFile))
+            {
+                using StreamWriter sw = File.CreateText(currentFile);
+                foreach (ClientElements client in clients)
+                {
+                    sw.WriteLine(client.clientName + "," + client.ipAddress + "," + client.printSubjects());
+                }
+                        
+            }
+            else
+            {
+                using StreamWriter sw = File.CreateText(currentFile);
+                foreach (ClientElements client in clients)
+                {
+                    sw.WriteLine(client.clientName + "," + client.ipAddress + "," + client.printSubjects());
+                }
+                        
             }
         }       
 
@@ -132,7 +228,7 @@ namespace UDPSocketProject
                         response.message = "REGISTERED,";
                         response.message += RQ + "," + Name + "," + ipAddress;
                         response.valid = true;
-                        writetoFile(clients);
+                        WriteToFile(clients);
 
                     }
                     return response;
@@ -165,6 +261,7 @@ namespace UDPSocketProject
                         clients[clients.FindIndex(obj=>obj.clientName.Equals(Name))] = element;
                         response.message = "UPDATE-CONFIRMED,";
                         response.message += RQ + "," + Name + "," + ipAddress;
+                        UpdateIP(element.clientName, array[3]);
                         response.valid = true;
                     } 
                     else
@@ -217,6 +314,7 @@ namespace UDPSocketProject
                         
                         element.clientSubjects = newSubs;
                         response.message = String.Format("SUBJECTS-UPDATED,{0},{1},{2}", RQ, Name, array[3]);
+                        UpdateSubjects(element.clientName, array[3]);
                         response.valid = true;
                     }
                     else
