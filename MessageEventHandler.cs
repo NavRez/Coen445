@@ -79,13 +79,48 @@ namespace UDPSocketProject
         public string otherFile = Path.Combine(Environment.CurrentDirectory, "ServerB.txt");
         public MessageEventHandler() 
         {
+            if (!File.Exists(filePathA))
+            {
+                File.Create(filePathA);
+            }
+            if (!File.Exists(filePathB))
+            {
+                File.Create(filePathB);
+            }
+
             if (Program.currentServer.Equals("A"))
             {
                 currentFile = filePathA;
+                otherFile = filePathB;
             }
             else
             {
                 currentFile = filePathB;
+                otherFile = filePathA;
+            }
+            CheckEqualFiles();
+
+            
+        }
+
+        public void CheckEqualFiles()
+        {
+            if (UdpServer.twoServerComm)
+            {
+                string[] currentLines = File.ReadAllLines(currentFile);
+                string[] otherLines = File.ReadAllLines(otherFile);
+
+                if (currentLines.Length != otherLines.Length)
+                {
+                    File.WriteAllLines(currentFile, otherLines);
+                }
+                else
+                {
+                    if (!currentLines.SequenceEqual(otherLines))
+                    {
+                        File.WriteAllLines(currentFile, otherLines);
+                    }
+                }
             }
         }
 
@@ -117,6 +152,23 @@ namespace UDPSocketProject
                     if (clientElements[0].Equals(clientName))
                     {
                         lines[i] = clientElements[0] + "," + clientElements[1] + "," + newSubs;
+                    }
+                }
+                File.WriteAllLines(currentFile, lines);
+            }
+        }
+
+        private void UpdateIP(string clientName, string newIP)
+        {
+            if (File.Exists(currentFile))
+            {
+                string[] lines = File.ReadAllLines(currentFile);
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    List<string> clientElements = lines[i].Split(",").ToList();
+                    if (clientElements[0].Equals(clientName))
+                    {
+                        lines[i] = clientElements[0] + "," + newIP + "," + clientElements[2];
                     }
                 }
                 File.WriteAllLines(currentFile, lines);
@@ -209,6 +261,7 @@ namespace UDPSocketProject
                         clients[clients.FindIndex(obj=>obj.clientName.Equals(Name))] = element;
                         response.message = "UPDATE-CONFIRMED,";
                         response.message += RQ + "," + Name + "," + ipAddress;
+                        UpdateIP(element.clientName, array[3]);
                         response.valid = true;
                     } 
                     else

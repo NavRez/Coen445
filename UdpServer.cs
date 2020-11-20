@@ -24,7 +24,7 @@ namespace UDPSocketProject
         Thread serverSwapThread;
 
         public static bool sleeping = true;
-        public static bool twoServerComm = true;
+        public static bool twoServerComm = false;
         Response response = new Response();
 
 
@@ -188,10 +188,10 @@ namespace UDPSocketProject
             {
                 Console.WriteLine("Sending other server an update");
                 thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, otherServerIP);
+                twoServerComm = true;
             }
             catch
             {
-                
                 Console.WriteLine("Other server does not exist, cannot update it with my IP");
                 sleeping = false;
                 twoServerComm = false;
