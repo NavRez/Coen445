@@ -13,9 +13,7 @@ namespace UDPSocketProject
 {
     class UdpServer
     {
-
-        public MessageEventHandler messageEventHandler = new MessageEventHandler();
-
+        public MessageEventHandler messageEventHandler;
         protected IPEndPoint thisServerIP;//the ip of the server
         protected IPEndPoint otherServerIP;
         protected Socket thisServerSocket;
@@ -54,8 +52,10 @@ namespace UDPSocketProject
         {
 
 
-            Console.WriteLine("Server Started at IP: " + thisServerIP.ToString());
             NewServerIP();
+            messageEventHandler = new MessageEventHandler();
+            Console.WriteLine("Server Started at IP: " + thisServerIP.ToString());
+            
             //if (currentServer.Equals("A"))
             //{
             //    sleeping = false;
@@ -78,6 +78,8 @@ namespace UDPSocketProject
 
             serverListenThread.Start();
             serverSwapThread.Start();
+
+            
 
             serverListenThread.Join();
             serverSwapThread.Join();
@@ -103,7 +105,7 @@ namespace UDPSocketProject
                 }
                 catch
                 {
-                    Console.WriteLine("Other server is not responding, I am the only server");
+                    Console.WriteLine("Other server is not responding, I am Active");
                     sleeping = false;
                     continue;
                 }
@@ -112,9 +114,11 @@ namespace UDPSocketProject
                 {
                     if (receivedMessage.Equals("UPDATE-SERVER"+ "," + senderRemote.ToString()))
                     {
-                        Console.Write("Updating other Server IP From: " + otherServerIP);
-                        otherServerIP = (IPEndPoint)senderRemote;
-                        Console.WriteLine(" To: " + otherServerIP +"... letting clients know");
+                        twoServerComm = true;
+                        Console.Write("Updating other Server IP From " + otherServerIP);
+                        string[] ipAndPort = senderRemote.ToString().Split(":").ToArray();
+                        otherServerIP = new IPEndPoint(IPAddress.Parse(ipAndPort[0]), Int32.Parse(ipAndPort[1]));
+                        Console.WriteLine(" To " + otherServerIP +"... letting clients know");
 
                     }
                     Console.WriteLine("Server {0} : {1}", thisServerIP, receivedMessage);
@@ -136,6 +140,9 @@ namespace UDPSocketProject
                 {
                     if (receivedMessage.Equals("WAKE-UP" + "," + senderRemote.ToString()))
                     {
+                        Console.WriteLine("\n*****SENDING TO OTHER SERVER******");
+                        Console.WriteLine("What I think the ip is:" + otherServerIP.ToString());
+                        Console.WriteLine("what it actually is   : " + senderRemote.ToString() + "\n");
                         byte[] feed = Encoding.ASCII.GetBytes("GO-SLEEP");
                         thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)otherServerIP);
                     }
