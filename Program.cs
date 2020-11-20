@@ -47,6 +47,12 @@ namespace UDPSocketProject
 
             Console.WriteLine("Enter IP (no port) for the other server: ");
             otherServerIP = Console.ReadLine();
+            while (otherServerIP.Length < 1)
+            {
+                Console.WriteLine("Invalid IP, try again");
+                otherServerIP = Console.ReadLine();
+            }
+            
 
             Console.WriteLine("Enter Port for the other server: ");
             otherPort = Console.ReadLine();
