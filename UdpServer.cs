@@ -106,7 +106,6 @@ namespace UDPSocketProject
                 catch
                 {
                     Console.WriteLine("Other server is not responding, I am Active");
-                    sleeping = false;
                     continue;
                 }
                 
@@ -143,23 +142,30 @@ namespace UDPSocketProject
                         Console.WriteLine("\n*****SENDING TO OTHER SERVER******");
                         Console.WriteLine("What I think the ip is:" + otherServerIP.ToString());
                         Console.WriteLine("what it actually is   : " + senderRemote.ToString() + "\n");
-                        if (!otherServerIP.ToString().Equals(senderRemote.ToString()))
-                        {
-                            otherServerIP.ToString().Equals(senderRemote.ToString());
-                        }
-                        byte[] feed = Encoding.ASCII.GetBytes("GO-SLEEP");
-                        thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)otherServerIP);
+                        //if (!otherServerIP.ToString().Equals(senderRemote.ToString()))
+                        //{
+                        //    otherServerIP.ToString().Equals(senderRemote.ToString());
+                        //}
+                        //byte[] feed = Encoding.ASCII.GetBytes("GO-SLEEP");
+                        //thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)otherServerIP);
                     }
 
                     if (otherServerIP.Equals((IPEndPoint)senderRemote) && receivedMessage.Length > 0)
                     {
                         Console.WriteLine("Server {0} : From that server: {1}", thisServerIP, receivedMessage);
-                        receivedMessage += "," + thisServerIP.ToString();
-                        response = messageEventHandler.SwitchCase(receivedMessage, thisServerSocket);
                         if (response.message.Length > 0)
                         {
-                            Console.WriteLine("From other server: " + response.message);
+                            Console.WriteLine("From other server: " + receivedMessage);
                         }
+                        receivedMessage += "," + thisServerIP.ToString();
+
+                        response = messageEventHandler.SwitchCase(receivedMessage, thisServerSocket);
+                        if (response.valid)
+                        {
+                            byte[] feed = Encoding.ASCII.GetBytes(response.message);
+                            thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)otherServerIP);
+                        }
+
 
                     }
                 }

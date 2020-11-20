@@ -338,7 +338,9 @@ namespace UDPSocketProject
                             socket.SendTo(userFeed, 0, userFeed.Length, SocketFlags.None, clientIP);
                         }
                         Console.WriteLine("\nI'M AWAKE\nTelling other server to sleep.");
-                        response.valid = false;                        
+
+                        response.valid = true;
+                        response.message = "GO-SLEEP";
                     }                   
                     return response;
                 case "GO-SLEEP":
