@@ -143,6 +143,10 @@ namespace UDPSocketProject
                         Console.WriteLine("\n*****SENDING TO OTHER SERVER******");
                         Console.WriteLine("What I think the ip is:" + otherServerIP.ToString());
                         Console.WriteLine("what it actually is   : " + senderRemote.ToString() + "\n");
+                        if (!otherServerIP.ToString().Equals(senderRemote.ToString()))
+                        {
+                            otherServerIP.ToString().Equals(senderRemote.ToString());
+                        }
                         byte[] feed = Encoding.ASCII.GetBytes("GO-SLEEP");
                         thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)otherServerIP);
                     }
