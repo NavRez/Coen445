@@ -118,10 +118,5 @@ namespace UDPSocketProject
             }
         }
 
-        //May be needed if registered gets set to false to remove all the information of the object
-        protected virtual void Dispose(bool disposing)
-        {
-            
-        }
     }
 }

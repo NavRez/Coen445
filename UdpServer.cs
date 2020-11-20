@@ -88,6 +88,7 @@ namespace UDPSocketProject
             byte[] receiveBytes = new byte[1024];
             IPEndPoint sender = new IPEndPoint(IPAddress.Any, 0);
             EndPoint senderRemote = (EndPoint)sender;
+            messageEventHandler.ReadFromFile();
 
             while (true)
             {
@@ -150,9 +151,6 @@ namespace UDPSocketProject
                         }
 
                     }
-
-
-
                 }
 
             }
@@ -164,7 +162,7 @@ namespace UDPSocketProject
             {
                 if (!sleeping)
                 {
-                    Thread.Sleep(10000);
+                    Thread.Sleep(15000);
                     Console.WriteLine("Sending wake up");
                     string serverSwapMessage = "WAKE-UP";
                     byte[] feed = Encoding.ASCII.GetBytes(serverSwapMessage);

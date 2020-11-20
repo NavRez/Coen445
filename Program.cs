@@ -22,34 +22,34 @@ namespace UDPSocketProject
                 currentServer = Console.ReadLine();
             }
 
-
-            if (currentServer.Equals("A"))
-            {
-                currentPort = "4444";
-                otherPort = "3333";
-                otherServerIP = GetLocalIPAddress();
-            }
-            else
-            {
-                currentPort = "3333";
-                otherPort = "4444";
-                otherServerIP = GetLocalIPAddress();
-            }
+            //if (currentServer.Equals("A"))
+            //{
+            //    currentPort = "4444";
+            //    otherPort = "3333";
+            //    otherServerIP = GetLocalIPAddress();
+            //}
+            //else
+            //{
+            //    currentPort = "8888";
+            //    currentPort = Console.ReadLine();
+            //    otherPort = "4444";
+            //    otherServerIP = GetLocalIPAddress();
+            //}
 
 
 
             Console.WriteLine("Enter Port for this server: ");
-            //currentPort = Console.ReadLine();
+            currentPort = Console.ReadLine();
 
 
             Console.WriteLine("Server " + currentServer + " IP address: "
                 + GetLocalIPAddress() + ":" + currentPort);
 
             Console.WriteLine("Enter IP (no port) for the other server: ");
-            //otherServerIP = Console.ReadLine();
+            otherServerIP = Console.ReadLine();
 
             Console.WriteLine("Enter Port for the other server: ");
-            //otherPort = Console.ReadLine();
+            otherPort = Console.ReadLine();
 
 
             int currentPortInt;
@@ -82,9 +82,5 @@ namespace UDPSocketProject
             }
             throw new Exception("No network adapters with an IPv4 address in the system!");
         }
-
-
-
-
     }
 }
