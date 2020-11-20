@@ -73,10 +73,10 @@ namespace UDPSocketProject
     {
 
         public List<ClientElements> clients = new List<ClientElements>();
-        public string filePathA = Path.Combine(Environment.CurrentDirectory, "ServerA.txt");
-        public string filePathB = Path.Combine(Environment.CurrentDirectory, "ServerB.txt");
-        public string currentFile = Path.Combine(Environment.CurrentDirectory, "ServerA.txt");
-        public string otherFile = Path.Combine(Environment.CurrentDirectory, "ServerB.txt");
+        public string filePathA = Path.Combine("../../../ServerA.txt");
+        public string filePathB = Path.Combine("../../../ServerB.txt");
+        public string currentFile = Path.Combine("../../../ServerA.txt");
+        public string otherFile = Path.Combine("../../../ServerB.txt");
         public MessageEventHandler() 
         {
             if (!File.Exists(filePathA))
