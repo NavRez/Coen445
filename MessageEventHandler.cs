@@ -277,6 +277,7 @@ namespace UDPSocketProject
                     }
                     return response;
                 case "DE-REGISTER":
+                    response.clientValid = true;
                     RQ = array[1];
                     Name = array[2];
                     if (clients.Any(i => i.clientName.Equals(Name)))
