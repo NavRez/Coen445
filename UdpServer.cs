@@ -90,6 +90,7 @@ namespace UDPSocketProject
             byte[] receiveBytes = new byte[1024];
             IPEndPoint sender = new IPEndPoint(IPAddress.Any, 0);
             EndPoint senderRemote = (EndPoint)sender;
+            messageEventHandler.ReadFromFile();
 
             while (true)
             {
