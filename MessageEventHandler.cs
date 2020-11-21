@@ -141,7 +141,7 @@ namespace UDPSocketProject
             }
         }
 
-        private void UpdateSubjects(string clientName,string newSubs)
+        private void UpdateSubjectsInFile(string clientName,string newSubs)
         {
             if (File.Exists(currentFile))
             {
@@ -158,7 +158,24 @@ namespace UDPSocketProject
             }
         }
 
-        private void UpdateIP(string clientName, string newIP)
+        private void RemoveClientFromFile (string clientName)
+        {
+            if (File.Exists(currentFile))
+            {
+                string[] lines = File.ReadAllLines(currentFile);
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    List<string> clientElements = lines[i].Split(",").ToList();
+                    if (clientElements[0].Equals(clientName))
+                    {
+                        lines[i] = "";
+                    }
+                }
+                File.WriteAllLines(currentFile, lines);
+            }
+        }
+
+        private void UpdateIPInFile(string clientName, string newIP)
         {
             if (File.Exists(currentFile))
             {
@@ -242,6 +259,7 @@ namespace UDPSocketProject
                         response.message = "DE-REGISTERED,";
                         response.message += Name;
                         response.valid = true;
+                        RemoveClientFromFile(array[2]);
                     } 
                     else
                     {
@@ -261,7 +279,7 @@ namespace UDPSocketProject
                         clients[clients.FindIndex(obj=>obj.clientName.Equals(Name))] = element;
                         response.message = "UPDATE-CONFIRMED,";
                         response.message += RQ + "," + Name + "," + ipAddress;
-                        UpdateIP(element.clientName, array[3]);
+                        UpdateIPInFile(element.clientName, array[3]);
                         response.valid = true;
                     } 
                     else
@@ -314,7 +332,7 @@ namespace UDPSocketProject
                         
                         element.clientSubjects = newSubs;
                         response.message = String.Format("SUBJECTS-UPDATED,{0},{1},{2}", RQ, Name, array[3]);
-                        UpdateSubjects(element.clientName, array[3]);
+                        UpdateSubjectsInFile(element.clientName, array[3]);
                         response.valid = true;
                     }
                     else
