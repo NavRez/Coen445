@@ -90,7 +90,6 @@ namespace UDPSocketProject
             byte[] receiveBytes = new byte[1024];
             IPEndPoint sender = new IPEndPoint(IPAddress.Any, 0);
             EndPoint senderRemote = (EndPoint)sender;
-            messageEventHandler.ReadFromFile();
 
             while (true)
             {
@@ -108,7 +107,7 @@ namespace UDPSocketProject
                     Console.WriteLine("Other server is not responding, I am Active");
                     continue;
                 }
-                
+
                 if (!sleeping)
                 {
                     if (receivedMessage.Equals("UPDATE-SERVER"+ "," + senderRemote.ToString()))
@@ -117,19 +116,24 @@ namespace UDPSocketProject
                         Console.Write("Updating other Server IP From " + otherServerIP);
                         string[] ipAndPort = senderRemote.ToString().Split(":").ToArray();
                         otherServerIP = new IPEndPoint(IPAddress.Parse(ipAndPort[0]), Int32.Parse(ipAndPort[1]));
-                        Console.WriteLine(" To " + otherServerIP +"... letting clients know");
 
+                        Console.WriteLine(" To " + otherServerIP + "... letting clients know");
+                        Console.WriteLine("*****Sending other server my Database*****");
+                        byte[] file = Encoding.ASCII.GetBytes("SENT-FILE," + messageEventHandler.SendWholeFile());
+                        Console.WriteLine("SENT-FILE," + messageEventHandler.SendWholeFile());
+                        thisServerSocket.SendTo(file, 0, file.Length, SocketFlags.None, (IPEndPoint)otherServerIP);
                     }
                     Console.WriteLine("Server {0} : {1}", thisServerIP, receivedMessage);
 
                     response = messageEventHandler.SwitchCase(receivedMessage, thisServerSocket);
                     byte[] feed = Encoding.ASCII.GetBytes(response.message);
-                    if(response.message.Length > 0)
+                    if(response.clientValid)
                     {
                         Console.WriteLine(response.message);
+                        thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)senderRemote);
                     }
-                    thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)senderRemote);
-                    if (response.valid && twoServerComm)
+                    
+                    if (response.serverValid && twoServerComm)
                     {
                         feed = Encoding.ASCII.GetBytes(receivedMessage + ",");
                         thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)otherServerIP);
@@ -160,7 +164,7 @@ namespace UDPSocketProject
                         receivedMessage += "," + thisServerIP.ToString();
 
                         response = messageEventHandler.SwitchCase(receivedMessage, thisServerSocket);
-                        if (response.valid)
+                        if (response.serverValid)
                         {
                             byte[] feed = Encoding.ASCII.GetBytes(response.message);
                             thisServerSocket.SendTo(feed, 0, feed.Length, SocketFlags.None, (IPEndPoint)otherServerIP);
@@ -212,6 +216,7 @@ namespace UDPSocketProject
                 Console.WriteLine("Other server does not exist, cannot update it with my IP");
                 sleeping = false;
                 twoServerComm = false;
+                return;
             }
         }
 

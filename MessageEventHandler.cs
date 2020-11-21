@@ -11,16 +11,19 @@ namespace UDPSocketProject
     public class Response
     {
         public string message;
-        public bool valid;
+        public bool serverValid;
+        public bool clientValid;
         public Response()
         {
             message = "";
-            valid = false;
+            serverValid = false;
+            clientValid = false;
         }
-        public Response(string _message, bool _valid)
+        public Response(string _message, bool _valid, bool _clientValid)
         {
             message = _message;
-            valid = _valid;
+            serverValid = _valid;
+            clientValid = _clientValid;
         }        
     }
 
@@ -98,13 +101,31 @@ namespace UDPSocketProject
                 currentFile = filePathB;
                 otherFile = filePathA;
             }
-            CheckEqualFiles();
+            //CheckEqualFiles();
 
             
         }
 
+        public string SendWholeFile()
+        {
+            string wholeFile = "";
+
+            if (UdpServer.twoServerComm)
+            {
+                
+                string[] currentLines = File.ReadAllLines(currentFile);
+
+                for (int i = 0; i < currentLines.Length; i++)
+                {
+                    wholeFile += currentLines[i] + "\n";
+                }                               
+            }
+            return wholeFile;
+        }
+
         public void CheckEqualFiles()
         {
+            
             if (UdpServer.twoServerComm)
             {
                 string[] currentLines = File.ReadAllLines(currentFile);
@@ -128,6 +149,7 @@ namespace UDPSocketProject
         {       
             if (File.Exists(currentFile))
             {
+                clients.Clear();
                 string[] lines = File.ReadAllLines(currentFile);
                 foreach (var line in lines)
                 {
@@ -230,13 +252,14 @@ namespace UDPSocketProject
                     Name = array[2];
                     ipAddress = array[3];
                     var User1 = new ClientElements(Name, ipAddress);
+                    response.clientValid = true;
                 
                     if (clients.Any(i => i.clientName.Equals(Name)))
                     {
                         //Register-Denied
                         response.message = "REGISTER-DENIED,";
                         response.message += RQ + ",Name is already in use";
-                        response.valid = false;
+                        response.serverValid = false;
 
                     }
                     else
@@ -244,7 +267,7 @@ namespace UDPSocketProject
                         clients.Add(User1);
                         response.message = "REGISTERED,";
                         response.message += RQ + "," + Name + "," + ipAddress;
-                        response.valid = true;
+                        response.serverValid = true;
                         WriteToFile(clients);
 
                     }
@@ -258,12 +281,12 @@ namespace UDPSocketProject
                         clients.RemoveAll(n => n.clientName.Equals(Name));
                         response.message = "DE-REGISTERED,";
                         response.message += Name;
-                        response.valid = true;
+                        response.serverValid = true;
                         RemoveClientFromFile(array[2]);
                     } 
                     else
                     {
-                        response.valid = false;
+                        response.serverValid = false;
                         response.message = "User not registered";
                     }
                     return response;
@@ -271,6 +294,7 @@ namespace UDPSocketProject
                     RQ = array[1];
                     Name = array[2];
                     ipAddress = array[3];
+                    response.clientValid = true;
 
                     if (clients.Any(i=>i.clientName.Equals(Name)))
                     {
@@ -280,13 +304,13 @@ namespace UDPSocketProject
                         response.message = "UPDATE-CONFIRMED,";
                         response.message += RQ + "," + Name + "," + ipAddress;
                         UpdateIPInFile(element.clientName, array[3]);
-                        response.valid = true;
+                        response.serverValid = true;
                     } 
                     else
                     {
                         response.message = "UPDATE-DENIED,";
                         response.message += RQ + "," + Name + " does not exist";
-                        response.valid = false;
+                        response.serverValid = false;
                     }
                     return response;
                 case "PUBLISH":
@@ -296,6 +320,7 @@ namespace UDPSocketProject
                     string userMessage = array[4];
                     ipAddress = array[5];
                     bool subjectInterest = false;
+                    response.clientValid = true;
                     response.message = String.Format("MESSAGE,{0},{1},{2}", Name, subj, userMessage);
                     foreach (ClientElements element in clients)
                     {
@@ -303,7 +328,6 @@ namespace UDPSocketProject
                         {
 
                             List<string> ipandPort = element.ipAddress.Split(":").ToList();
-
                             IPEndPoint clientIP = new IPEndPoint(IPAddress.Parse(ipandPort[0]),
                                 Int32.Parse(ipandPort[1]));
                             byte[] userFeed = Encoding.ASCII.GetBytes(response.message);
@@ -318,12 +342,13 @@ namespace UDPSocketProject
                         return response;
                     }
                     response.message = "";
-                    response.valid = false;
+                    response.serverValid = false;
                     return response;
 
                 case "SUBJECTS":
                     RQ = array[1];
                     Name = array[2];
+                    response.clientValid = true;
                     List<string> newSubs = array[3].Split("@").ToList();
                     if (clients.Any(i => i.clientName.Equals(Name)))
                     {
@@ -333,12 +358,12 @@ namespace UDPSocketProject
                         element.clientSubjects = newSubs;
                         response.message = String.Format("SUBJECTS-UPDATED,{0},{1},{2}", RQ, Name, array[3]);
                         UpdateSubjectsInFile(element.clientName, array[3]);
-                        response.valid = true;
+                        response.serverValid = true;
                     }
                     else
                     {
                         response.message = String.Format("SUBJECTS-REJECTED,{0},{1},{2}", RQ, Name, array[3]);
-                        response.valid = false;
+                        response.serverValid = false;
                     }                        
                     return response;
                 case "WAKE-UP":
@@ -357,17 +382,16 @@ namespace UDPSocketProject
                         }
                         Console.WriteLine("\nI'M AWAKE\nTelling other server to sleep.");
 
-                        response.valid = true;
+                        response.serverValid = true;
                         response.message = "GO-SLEEP";
                     }                   
                     return response;
                 case "GO-SLEEP":
                     Console.WriteLine("\nI'M ASLEEP\nI was told to go sleep, And now I sleep...zzz");
                     UdpServer.sleeping = true;
-                    response.valid = false;
+                    response.serverValid = false;
                     return response;
                 case "UPDATE-SERVER":
-
                     string otherServerIP = array[1];
                     foreach (ClientElements element in clients)
                     {
@@ -375,9 +399,24 @@ namespace UDPSocketProject
                         IPEndPoint clientIP = new IPEndPoint(IPAddress.Parse(ipandPort[0]),
                             Int32.Parse(ipandPort[1]));
 
-                        byte[] userFeed = Encoding.ASCII.GetBytes("UPDATE-SERVER," + otherServerIP);
+                        byte[] userFeed = Encoding.ASCII.GetBytes("UPDATE-OTHER-SERVER," + otherServerIP);
                         socket.SendTo(userFeed, 0, userFeed.Length, SocketFlags.None, clientIP);
                     }
+                    //response.serverValid = true;
+                    //response.message = "SENT-FILE," + SendWholeFile();
+                    return response;
+                case "SENT-FILE":
+                    var a = incomingInfo.Split(Environment.NewLine).ToArray();
+                    List<string> fullFile = new List<string>();
+                    Console.WriteLine("*INCOMING INFO**");
+                    Console.WriteLine(incomingInfo);
+                    List<string> newClientFile = incomingInfo.Split("\n").ToList();
+                    newClientFile[0] = newClientFile[0].Replace("SENT-FILE,", "");
+                    newClientFile.RemoveAt(newClientFile.Count - 1);
+
+                    File.WriteAllLines(currentFile, newClientFile);
+                    ReadFromFile();
+
                     return response;
 
                 default:
