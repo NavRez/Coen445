@@ -153,12 +153,16 @@ namespace UDPSocketProject
                 string[] lines = File.ReadAllLines(currentFile);
                 foreach (var line in lines)
                 {
-                    List<string> clientElements = line.Split(",").ToList();
-                    List<string> clientSubjects = clientElements[2].Split("@").ToList();
-                    ClientElements client = new ClientElements(clientElements[0], clientElements[1], clientSubjects);
-                    clients.Add(client);
+                    if(line.Length > 0)
+                    {
+                        List<string> clientElements = line.Split(",").ToList();
+                        List<string> clientSubjects = clientElements[2].Split("@").ToList();
+                        ClientElements client = new ClientElements(clientElements[0], clientElements[1], clientSubjects);
+                        clients.Add(client);
 
-                    Console.WriteLine("Added client: " + clientElements[0] + clientElements[1] + client.printSubjects());
+                        Console.WriteLine("Added client: " + clientElements[0] + " " + clientElements[1] + " " + client.printSubjects());
+                    }
+                    
                 }
             }
         }
